@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Settings - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Homw</a></li>
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../health-dashboard.html">Health Data</a></li>
+                <li><a href="../report-form.html">Report Issue</a></li>
+                <li><a href="dashboard.html" class="active">Admin</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <a href="dashboard.html" class="btn btn-secondary" style="margin-bottom: 1rem;">← Back to Admin Dashboard</a>
+        
+        <div class="card">
+            <h2>System Settings</h2>
+            
+            <form id="settings-form">
+                <div class="form-group">
+                    <label>System Name</label>
+                    <input type="text" id="system-name" class="form-control" value="Bamenda Water & Health Dashboard">
+                </div>
+                
+                <div class="form-group">
+                    <label>System Tagline</label>
+                    <input type="text" id="system-tagline" class="form-control" value="Know Your Water, Protect Your Health">
+                </div>
+                
+                <div class="form-group">
+                    <label>Contact Email</label>
+                    <input type="email" id="contact-email" class="form-control" value="info@bamendawater.org">
+                </div>
+                
+                <div class="form-group">
+                    <label>Emergency Phone Number</label>
+                    <input type="tel" id="emergency-phone" class="form-control" value="+237 XXX XXX XXX">
+                </div>
+                
+                <div class="form-group">
+                    <label>Disclaimer Text</label>
+                    <textarea id="disclaimer-text" class="form-control" rows="4">⚠️ Information is for guidance only. Always consult official water testing authorities for health decisions.</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Default Map Center (Latitude)</label>
+                    <input type="number" id="map-lat" class="form-control" step="any" value="5.9667">
+                </div>
+                
+                <div class="form-group">
+                    <label>Default Map Center (Longitude)</label>
+                    <input type="number" id="map-lng" class="form-control" step="any" value="10.1500">
+                </div>
+                
+                <div class="form-group">
+                    <label>Default Zoom Level</label>
+                    <input type="number" id="map-zoom" class="form-control" min="1" max="19" value="14">
+                </div>
+                
+                <hr style="margin: 1.5rem 0;">
+                
+                <h3>Report Moderation Settings</h3>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="auto-approve-reports"> Auto-approve community reports (skip moderation)
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label>Minimum reports before safety status update</label>
+                    <input type="number" id="min-reports" class="form-control" min="1" max="10" value="3">
+                </div>
+                
+                <hr style="margin: 1.5rem 0;">
+                
+                <h3>Data Management</h3>
+                
+                <div class="form-group">
+                    <label>Automatically delete old reports after (days)</label>
+                    <input type="number" id="report-retention" class="form-control" value="365">
+                    <small>Set to 0 to never delete</small>
+                </div>
+                
+                <div class="form-group">
+                    <label>Backup Frequency</label>
+                    <select id="backup-frequency" class="form-control">
+                        <option value="daily">Daily</option>
+                        <option value="weekly" selected>Weekly</option>
+                        <option value="monthly">Monthly</option>
+                        <option value="never">Never</option>
+                    </select>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary">Save Settings</button>
+                    <button type="button" onclick="resetSettings()" class="btn btn-secondary">Reset to Defaults</button>
+                    <button type="button" onclick="exportSettings()" class="btn btn-secondary">Export Settings</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="card">
+            <h3>System Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">Version</div>
+                    <div class="info-value">1.0.0</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Last Updated</div>
+                    <div class="info-value">2024-03-22</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Database Size</div>
+                    <div class="info-value">2.3 MB</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Total Users</div>
+                    <div class="info-value" id="total-users">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h3>Danger Zone</h3>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button onclick="clearCache()" class="btn btn-secondary">Clear Cache</button>
+                <button onclick="exportDatabase()" class="btn btn-secondary">Export Database</button>
+                <button onclick="resetSystem()" class="btn btn-danger">Reset System (Delete All Data)</button>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="../js/main.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        if (!hasPermission('system_settings')) {
+            window.location.href = '../index.html';
+        }
+        
+        // Load settings from localStorage or use defaults
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('system_settings') || '{}');
+            
+            document.getElementById('system-name').value = settings.system_name || 'Bamenda Water & Health Dashboard';
+            document.getElementById('system-tagline').value = settings.system_tagline || 'Know Your Water, Protect Your Health';
+            document.getElementById('contact-email').value = settings.contact_email || 'info@bamendawater.org';
+            document.getElementById('emergency-phone').value = settings.emergency_phone || '+237 XXX XXX XXX';
+            document.getElementById('disclaimer-text').value = settings.disclaimer || '⚠️ Information is for guidance only. Always consult official water testing authorities for health decisions.';
+            document.getElementById('map-lat').value = settings.map_lat || 5.9667;
+            document.getElementById('map-lng').value = settings.map_lng || 10.1500;
+            document.getElementById('map-zoom').value = settings.map_zoom || 14;
+            document.getElementById('auto-approve-reports').checked = settings.auto_approve || false;
+            document.getElementById('min-reports').value = settings.min_reports || 3;
+            document.getElementById('report-retention').value = settings.report_retention || 365;
+            document.getElementById('backup-frequency').value = settings.backup_frequency || 'weekly';
+        }
+        
+        function saveSettings() {
+            const settings = {
+                system_name: document.getElementById('system-name').value,
+                system_tagline: document.getElementById('system-tagline').value,
+                contact_email: document.getElementById('contact-email').value,
+                emergency_phone: document.getElementById('emergency-phone').value,
+                disclaimer: document.getElementById('disclaimer-text').value,
+                map_lat: parseFloat(document.getElementById('map-lat').value),
+                map_lng: parseFloat(document.getElementById('map-lng').value),
+                map_zoom: parseInt(document.getElementById('map-zoom').value),
+                auto_approve: document.getElementById('auto-approve-reports').checked,
+                min_reports: parseInt(document.getElementById('min-reports').value),
+                report_retention: parseInt(document.getElementById('report-retention').value),
+                backup_frequency: document.getElementById('backup-frequency').value
+            };
+            
+            localStorage.setItem('system_settings', JSON.stringify(settings));
+            showAlert('Settings saved successfully!', 'success');
+        }
+        
+        function resetSettings() {
+            if (confirm('Reset all settings to default values?')) {
+                localStorage.removeItem('system_settings');
+                loadSettings();
+                showAlert('Settings reset to defaults', 'info');
+            }
+        }
+        
+        function exportSettings() {
+            const settings = localStorage.getItem('system_settings');
+            const blob = new Blob([settings || '{}'], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'system_settings.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            showAlert('Settings exported successfully', 'success');
+        }
+        
+        function clearCache() {
+            if (confirm('Clear browser cache? This will not delete your data.')) {
+                localStorage.removeItem('system_settings');
+                showAlert('Cache cleared', 'success');
+            }
+        }
+        
+        function exportDatabase() {
+            showAlert('Database export started. You will receive an email when ready.', 'info');
+        }
+        
+        function resetSystem() {
+            if (confirm('⚠️ WARNING: This will delete ALL data! This action cannot be undone. Type "DELETE" to confirm.')) {
+                const confirmation = prompt('Type DELETE to confirm system reset');
+                if (confirmation === 'DELETE') {
+                    showAlert('System reset initiated (demo mode - no data actually deleted)', 'warning');
+                }
+            }
+        }
+        
+        // Update total users count
+        function updateSystemInfo() {
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            document.getElementById('total-users').textContent = users.length || 4;
+        }
+        
+        document.getElementById('settings-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            saveSettings();
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSettings();
+            updateSystemInfo();
+        });
+    </script>
+</body>
+</html>

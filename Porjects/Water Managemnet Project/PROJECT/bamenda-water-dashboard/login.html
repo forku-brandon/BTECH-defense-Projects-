@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login - Bamenda Water & Health Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .login-container {
+            min-height: 80vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .login-card {
+            max-width: 450px;
+            width: 100%;
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .login-header {
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+            color: white;
+            text-align: center;
+            padding: 2rem;
+        }
+        .login-header h1 {
+            color: white;
+            margin-bottom: 0.5rem;
+        }
+        .login-header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        .login-body {
+            padding: 2rem;
+        }
+        .role-selector {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: var(--bg-light);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            flex-wrap: wrap;
+        }
+        .role-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: var(--transition);
+            font-weight: 500;
+        }
+        .role-btn.active {
+            background: var(--primary-green);
+            color: white;
+        }
+        .role-info {
+            background: var(--bg-light);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+        .demo-credentials {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #e3f2fd;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+        .demo-credentials h4 {
+            margin-bottom: 0.5rem;
+            color: #1976d2;
+        }
+        .demo-credentials p {
+            margin: 0.25rem 0;
+            font-family: monospace;
+        }
+        .back-home {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .already-logged-in {
+            background: #e8f5e9;
+            border-left: 4px solid var(--primary-green);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            display: none;
+        }
+        .info-note {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 0.75rem;
+            border-radius: var(--radius-md);
+            margin-bottom: 1rem;
+            font-size: 0.8rem;
+            color: #e65100;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="report-form.html">Report Issue</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="login.html" class="active"> Login</a></li>
+            </ul>
+            <div class="nav-right">
+                <div class="auth-buttons" id="auth-buttons">
+                    <a href="register.html" class="btn-nav btn-nav-login active"> Signup</a>
+                </div>
+                <div class="user-menu-container" id="user-menu-container" style="display: none;"></div>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>🔐 Staff Login</h1>
+                <p>Access the professional dashboard for health workers, water officers, and administrators</p>
+            </div>
+            <div class="login-body">
+                <div class="info-note">
+                    <strong>ℹ️ Note:</strong> This portal is for authorized personnel only. Community members can view water quality data on the <a href="index.html">public map</a> and <a href="report-form.html">submit reports</a> without logging in.
+                </div>
+                
+                <div id="already-logged-in" class="already-logged-in" style="display: none;">
+                    <strong>✅ You are already logged in!</strong>
+                    <p>You are currently logged in. <a href="#" id="dashboard-link">Go to your dashboard</a> or <a href="#" onclick="logoutAndContinue()">logout to use a different account</a>.</p>
+                </div>
+                
+                <div class="role-selector">
+                    <button class="role-btn active" data-role="health" onclick="selectRole('health')">🏥 Health Worker</button>
+                    <button class="role-btn" data-role="water" onclick="selectRole('water')">💧 Water Officer</button>
+                    <button class="role-btn" data-role="admin" onclick="selectRole('admin')">⚙️ Administrator</button>
+                </div>
+                
+                <div id="role-info" class="role-info">
+                    <strong>🏥 Health Worker:</strong> Track disease outbreaks, submit weekly disease data, monitor water-health correlations, and generate health reports.
+                </div>
+                
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Login</button>
+                </form>
+                
+                <div class="demo-credentials" id="demo-credentials">
+                    <h4>📋 Staff Demo Credentials</h4>
+                    <div id="demo-credentials-content">
+                        <p><strong>🏥 Health Worker:</strong> health@example.com / password123</p>
+                        <p><strong>💧 Water Officer:</strong> water@example.com / password123</p>
+                        <p><strong>⚙️ Administrator:</strong> admin@example.com / password123</p>
+                    </div>
+                </div>
+                
+                <div class="back-home">
+                    <a href="dashboard.html">← Back to Public Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="js/main.js"></script>
+    <script src="js/mock-api.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let selectedRole = 'health';
+        
+        function selectRole(role) {
+            selectedRole = role;
+            
+            // Update active button
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.role === role) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Update role info text
+            const roleInfo = document.getElementById('role-info');
+            const demoContent = document.getElementById('demo-credentials-content');
+            
+            switch(role) {
+                case 'health':
+                    roleInfo.innerHTML = '<strong>🏥 Health Worker:</strong> Track disease outbreaks, submit weekly disease data, monitor water-health correlations, and generate health reports.';
+                    demoContent.innerHTML = `
+                        <p><strong>🏥 Health Worker:</strong> health@example.com / password123</p>
+                        <p><strong>💧 Water Officer:</strong> water@example.com / password123</p>
+                        <p><strong>⚙️ Administrator:</strong> admin@example.com / password123</p>
+                        <p><em>Access to disease surveillance dashboard and health analytics</em></p>
+                    `;
+                    break;
+                case 'water':
+                    roleInfo.innerHTML = '<strong>💧 Water Officer:</strong> Add test results, manage water sources, monitor water quality data, generate quality reports, and review community reports.';
+                    demoContent.innerHTML = `
+                        <p><strong>🏥 Health Worker:</strong> health@example.com / password123</p>
+                        <p><strong>💧 Water Officer:</strong> water@example.com / password123</p>
+                        <p><strong>⚙️ Administrator:</strong> admin@example.com / password123</p>
+                        <p><em>Access to water quality management tools and test result entry</em></p>
+                    `;
+                    break;
+                case 'admin':
+                    roleInfo.innerHTML = '<strong>⚙️ Administrator:</strong> Full system access, user management, system configuration, data backup, and complete analytics.';
+                    demoContent.innerHTML = `
+                        <p><strong>🏥 Health Worker:</strong> health@example.com / password123</p>
+                        <p><strong>💧 Water Officer:</strong> water@example.com / password123</p>
+                        <p><strong>⚙️ Administrator:</strong> admin@example.com / password123</p>
+                        <p><em>Full administrative access to all system features</em></p>
+                    `;
+                    break;
+            }
+        }
+        
+        // Function to check if user is logged in without auto-redirect
+        function checkLoginStatus() {
+            const token = localStorage.getItem('auth_token');
+            const userData = localStorage.getItem('current_user');
+            
+            if (token && userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    const alreadyLoggedInDiv = document.getElementById('already-logged-in');
+                    const loginForm = document.getElementById('login-form');
+                    const roleSelector = document.querySelector('.role-selector');
+                    
+                    // Only show for staff roles
+                    if (user.role === 'health_worker' || user.role === 'data_entry' || user.role === 'admin') {
+                        alreadyLoggedInDiv.style.display = 'block';
+                        if (loginForm) loginForm.style.display = 'none';
+                        if (roleSelector) roleSelector.style.display = 'none';
+                        
+                        const dashboardLink = document.getElementById('dashboard-link');
+                        if (dashboardLink) {
+                            dashboardLink.href = DASHBOARD_URLS[user.role];
+                        }
+                        return true;
+                    } else {
+                        // If community member is somehow logged in, log them out
+                        logout();
+                        return false;
+                    }
+                } catch (e) {
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('current_user');
+                    return false;
+                }
+            }
+            return false;
+        }
+        
+        // Function to logout and continue to login page
+        window.logoutAndContinue = function() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('current_user');
+            window.location.reload();
+        };
+        
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Logging in...';
+            submitBtn.disabled = true;
+            
+            try {
+                const result = await login(email, password);
+                
+                if (result.success) {
+                    // Check if user has staff role (health_worker, data_entry, or admin)
+                    if (result.user.role === 'health_worker' || result.user.role === 'data_entry' || result.user.role === 'admin') {
+                        showAlert(`Welcome ${result.user.name}! Redirecting to your dashboard...`, 'success');
+                        
+                        setTimeout(() => {
+                            window.location.href = result.redirectUrl;
+                        }, 1500);
+                    } else {
+                        // Community member trying to login - show error and logout
+                        showAlert('Access denied. This portal is for staff only. Please use the public map to view water quality data.', 'danger');
+                        logout();
+                        submitBtn.textContent = originalText;
+                        submitBtn.disabled = false;
+                    }
+                } else {
+                    showAlert(result.message || 'Invalid credentials', 'danger');
+                    submitBtn.textContent = originalText;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                showAlert('Error during login. Please try again.', 'danger');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
+        
+        // Check login status on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkLoginStatus();
+        });
+    </script>
+</body>
+</html>

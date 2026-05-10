@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Worker Dashboard - Bamenda Water & Health</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .dashboard-header { background: linear-gradient(135deg, #2196f3, #1976d2); color: white; padding: 2rem; border-radius: var(--radius-lg); margin-bottom: 2rem; }
+        .form-section { background: var(--bg-white); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem; box-shadow: var(--shadow); }
+        .quick-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card-health { background: linear-gradient(135deg, #2196f3, #1976d2); color: white; padding: 1.5rem; border-radius: var(--radius-lg); text-align: center; }
+        .risk-high { background: #ffebee; color: #c62828; padding: 0.25rem 0.5rem; border-radius: 20px; font-size: 0.75rem; }
+        .risk-medium { background: #fff3e0; color: #ef6c00; border-radius: 20px; padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+        .risk-low { background: #e8f5e9; color: #2e7d32; border-radius: 20px; padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo"><span class="logo-icon">💧</span><span>Bamenda Water & Health</span></div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../report-form.html">Report Issue</a></li>
+            </ul>
+            <div class="nav-right">
+                <div class="auth-buttons" id="auth-buttons">
+                    <a href="../login.html" class="btn-nav btn-nav-login">Login</a>
+                    <a href="../register.html" class="btn-nav btn-nav-register">Sign Up</a>
+                </div>
+                <div class="user-menu-container" id="user-menu-container"></div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <div class="dashboard-header">
+            <h1>🏥 Health Worker Dashboard</h1>
+            <p>Track disease outbreaks, submit weekly health data, and monitor water-related illnesses</p>
+        </div>
+        
+        <div class="quick-stats">
+            <div class="stat-card-health"><div class="stat-value" id="total-typhoid">0</div><div class="stat-label">Typhoid (This Week)</div></div>
+            <div class="stat-card-health" style="background: linear-gradient(135deg, #ff9800, #f57c00);"><div class="stat-value" id="total-malaria">0</div><div class="stat-label">Malaria</div></div>
+            <div class="stat-card-health" style="background: linear-gradient(135deg, #4caf50, #2e7d32);"><div class="stat-value" id="total-diarrhea">0</div><div class="stat-label">Diarrhea</div></div>
+            <div class="stat-card-health" style="background: linear-gradient(135deg, #f44336, #d32f2f);"><div class="stat-value" id="total-waterborne">0</div><div class="stat-label">Waterborne Diseases</div></div>
+        </div>
+        
+        <div class="form-section">
+            <h3>📝 Submit Weekly Disease Data</h3>
+            <form id="disease-form">
+                <div class="row">
+                    <div class="col"><div class="form-group"><label>Week</label><input type="week" id="week" class="form-control" required></div></div>
+                    <div class="col"><div class="form-group"><label>Facility</label><select id="facility" class="form-control" required><option>Mankon District Hospital</option><option>Mankon Health Center</option><option>St. Joseph Clinic</option></select></div></div>
+                </div>
+                <div class="row">
+                    <div class="col"><div class="form-group"><label>Typhoid</label><input type="number" id="typhoid" class="form-control" value="0"></div></div>
+                    <div class="col"><div class="form-group"><label>Malaria</label><input type="number" id="malaria" class="form-control" value="0"></div></div>
+                    <div class="col"><div class="form-group"><label>Diarrhea</label><input type="number" id="diarrhea" class="form-control" value="0"></div></div>
+                    <div class="col"><div class="form-group"><label>Cholera</label><input type="number" id="cholera" class="form-control" value="0"></div></div>
+                </div>
+                <div class="form-group"><label>Notes</label><textarea id="notes" class="form-control" rows="2"></textarea></div>
+                <button type="submit" class="btn btn-primary">Submit Data</button>
+            </form>
+        </div>
+        
+        <div class="form-section"><h3>📈 Disease Trends</h3><canvas id="disease-chart" style="height: 400px;"></canvas></div>
+        <div class="form-section"><h3>💧 Water Quality Correlation</h3><canvas id="correlation-chart" style="height: 400px;"></canvas></div>
+        
+        <div class="form-section">
+            <h3>🏥 Health Facilities Risk Assessment</h3>
+            <table class="data-table"><thead><tr><th>Facility</th><th>Waterborne Cases</th><th>Nearby Sources</th><th>Risk Level</th></tr></thead><tbody id="risk-body"></tbody></table>
+        </div>
+    </main>
+    
+    <footer class="footer"><p>&copy; 2024 Bamenda Water & Health Dashboard</p></footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/mock-api.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        let diseaseChart, correlationChart;
+        let diseaseData = { weekly: [
+            { week: "Week 1", typhoid: 12, malaria: 58, diarrhea: 8, cholera: 0 },
+            { week: "Week 2", typhoid: 15, malaria: 62, diarrhea: 10, cholera: 0 },
+            { week: "Week 3", typhoid: 18, malaria: 68, diarrhea: 12, cholera: 1 },
+            { week: "Week 4", typhoid: 22, malaria: 75, diarrhea: 15, cholera: 2 },
+            { week: "Week 5", typhoid: 20, malaria: 72, diarrhea: 14, cholera: 1 },
+            { week: "Week 6", typhoid: 16, malaria: 65, diarrhea: 11, cholera: 0 },
+            { week: "Week 7", typhoid: 14, malaria: 60, diarrhea: 9, cholera: 0 },
+            { week: "Week 8", typhoid: 12, malaria: 55, diarrhea: 7, cholera: 0 }
+        ]};
+        
+        if (!checkAuth()) window.location.href = '../login.html';
+        else if (currentUser && currentUser.role !== 'health_worker' && currentUser.role !== 'admin') {
+            showAlert('Access denied', 'danger');
+            setTimeout(() => window.location.href = DASHBOARD_URLS[currentUser.role], 2000);
+        }
+        
+        async function loadData() {
+            const sources = await API.get('/sources');
+            const last = diseaseData.weekly[diseaseData.weekly.length - 1];
+            document.getElementById('total-typhoid').textContent = last.typhoid;
+            document.getElementById('total-malaria').textContent = last.malaria;
+            document.getElementById('total-diarrhea').textContent = last.diarrhea;
+            document.getElementById('total-waterborne').textContent = last.typhoid + last.diarrhea + last.cholera;
+            initCharts(sources.data);
+            loadRiskAssessment(sources.data);
+        }
+        
+        function initCharts(sources) {
+            const ctx1 = document.getElementById('disease-chart').getContext('2d');
+            const weeks = diseaseData.weekly.map(w => w.week);
+            if (diseaseChart) diseaseChart.destroy();
+            diseaseChart = new Chart(ctx1, {
+                type: 'line', data: { labels: weeks, datasets: [
+                    { label: 'Typhoid', data: diseaseData.weekly.map(w => w.typhoid), borderColor: '#f44336', fill: true },
+                    { label: 'Malaria', data: diseaseData.weekly.map(w => w.malaria), borderColor: '#ff9800', fill: true },
+                    { label: 'Diarrhea', data: diseaseData.weekly.map(w => w.diarrhea), borderColor: '#2196f3', fill: true }
+                ]}, options: { responsive: true }
+            });
+            
+            const ctx2 = document.getElementById('correlation-chart').getContext('2d');
+            const waterborne = diseaseData.weekly.map(w => w.typhoid + w.diarrhea);
+            const unsafe = [28,25,22,20,18,15,12,10];
+            if (correlationChart) correlationChart.destroy();
+            correlationChart = new Chart(ctx2, {
+                type: 'line', data: { labels: weeks, datasets: [
+                    { label: 'Waterborne Cases', data: waterborne, borderColor: '#f44336', yAxisID: 'y', fill: true },
+                    { label: 'Unsafe Sources %', data: unsafe, borderColor: '#ff9800', yAxisID: 'y1', borderDash: [5,5], fill: true }
+                ]}, options: { responsive: true, scales: { y: { title: { display: true, text: 'Cases' } }, y1: { position: 'right', title: { text: '%' }, min: 0, max: 100 } } }
+            });
+        }
+        
+        function loadRiskAssessment(sources) {
+            const facilities = ['Mankon District Hospital', 'Mankon Health Center', 'St. Joseph Clinic'];
+            const last = diseaseData.weekly[diseaseData.weekly.length - 1];
+            const waterborne = last.typhoid + last.diarrhea;
+            const unsafeCount = sources.filter(s => s.safety_status === 'unsafe').length;
+            const risk = waterborne > 30 || unsafeCount > 2 ? 'high' : waterborne > 15 ? 'medium' : 'low';
+            document.getElementById('risk-body').innerHTML = facilities.map(f => `<tr><td>${f}</td><td>${waterborne}</td><td>${unsafeCount} unsafe sources</td><td><span class="risk-${risk}">${risk.toUpperCase()}</span></td></tr>`).join('');
+        }
+        
+        document.getElementById('disease-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const week = document.getElementById('week').value;
+            const weekName = `Week ${new Date(week).getWeek()}`;
+            const existing = diseaseData.weekly.find(w => w.week === weekName);
+            const newData = {
+                week: weekName,
+                typhoid: parseInt(document.getElementById('typhoid').value),
+                malaria: parseInt(document.getElementById('malaria').value),
+                diarrhea: parseInt(document.getElementById('diarrhea').value),
+                cholera: parseInt(document.getElementById('cholera').value)
+            };
+            if (existing) Object.assign(existing, newData);
+            else diseaseData.weekly.push(newData);
+            await API.post('/disease-data', newData);
+            showAlert('Data submitted!', 'success');
+            loadData();
+            e.target.reset();
+        });
+        
+        Date.prototype.getWeek = function() { let d = new Date(this); d.setHours(0,0,0); d.setDate(d.getDate() + 3 - (d.getDay()+6)%7); let w1 = new Date(d.getFullYear(),0,4); return 1 + Math.round(((d - w1)/86400000 - 3 + (w1.getDay()+6)%7)/7); };
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

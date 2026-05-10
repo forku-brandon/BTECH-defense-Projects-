@@ -1,0 +1,375 @@
+<!-- pages/gov-login.html - Government Official Login with Verification Codes -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Government Login - SSVIAS Cameroon</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .code-badge {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+            margin: 2px;
+        }
+        .agency-card {
+            transition: all 0.3s ease;
+        }
+        .agency-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>👮 Government Portal</span>
+            <span>Secure Access</span>
+        </div>
+        
+        <div class="header gov-card" style="background: linear-gradient(135deg, #1a5f7a, #0a3d52);">
+            <h1>🔐 Law Enforcement Portal</h1>
+            <p>Ministry of Transport & National Security</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <!-- Login Form -->
+            <div class="card">
+                <div class="card-title">Official Authentication</div>
+                <form id="gov-login-form">
+                    <div class="form-group">
+                        <label>👮 Agency / Department</label>
+                        <select id="agency-type" required>
+                            <option value="">Select Your Agency</option>
+                            <option value="Police Nationale">Police Nationale (National Police)</option>
+                            <option value="Gendarmerie">Gendarmerie Nationale</option>
+                            <option value="DOT">Delegation of Transport</option>
+                            <option value="DGSN">DGSN (General Delegation for National Security)</option>
+                            <option value="Ministry">Ministry of Transport</option>
+                            <option value="Customs">Customs Department</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🆔 Agency ID / Badge Number</label>
+                        <input type="text" id="agency-id" placeholder="e.g., POL-2024-001" required>
+                        <small>Enter your official badge number or agency ID</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔑 Verification Code</label>
+                        <input type="password" id="verification-code" placeholder="Enter 6-12 digit code" required>
+                        <small>Use the official code provided by your agency</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📍 Region of Operation</label>
+                        <select id="region" required>
+                            <option value="">Select Region</option>
+                            <option value="Adamawa">Adamawa (Ngaoundéré)</option>
+                            <option value="Centre">Centre (Yaoundé)</option>
+                            <option value="East">East (Bertoua)</option>
+                            <option value="Far North">Far North (Maroua)</option>
+                            <option value="Littoral">Littoral (Douala)</option>
+                            <option value="North">North (Garoua)</option>
+                            <option value="North West">North West (Bamenda)</option>
+                            <option value="West">West (Bafoussam)</option>
+                            <option value="South">South (Ebolowa)</option>
+                            <option value="South West">South West (Buea)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📱 Verification Phone (Optional)</label>
+                        <input type="tel" id="contact-phone" placeholder="For 2FA if enabled">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">🔓 Access Government Dashboard</button>
+                </form>
+            </div>
+            
+            <!-- Official Access Codes (Demo) -->
+            <div class="card">
+                <div class="card-title">Authorized Access Codes</div>
+                <div class="alert alert-info">
+                    <strong>📋 Official Demo Codes:</strong><br>
+                    <span class="code-badge">POLICE123</span> - National Police<br>
+                    <span class="code-badge">GEND456</span> - Gendarmerie<br>
+                    <span class="code-badge">TRANS789</span> - Transport Ministry<br>
+                    <span class="code-badge">DGSN2024</span> - DGSN Headquarters<br>
+                    <span class="code-badge">GOV2024</span> - Government Official<br>
+                    <span class="code-badge">SECURITY456</span> - Security Services<br>
+                    <span class="code-badge">CUSTOMS789</span> - Customs Department<br>
+                    <span class="code-badge">INTERPOL001</span> - INTERPOL Liaison
+                </div>
+                <div class="alert alert-warning" style="margin-top: 10px;">
+                    <strong>⚠️ Security Notice:</strong><br>
+                    These codes are for demonstration purposes. In production, each agency receives unique encrypted codes.
+                </div>
+            </div>
+            
+            <!-- Agency Information -->
+            <div class="card">
+                <div class="card-title">Agency Privileges</div>
+                <div id="agency-privileges">
+                    <div class="alert alert-success">
+                        <strong>✓ National Police:</strong> Full access - Verify, Track, Dispatch Alerts
+                    </div>
+                    <div class="alert alert-success">
+                        <strong>✓ Gendarmerie:</strong> Full access - Verify, Track, Dispatch Alerts
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>✓ Transport Ministry:</strong> View reports, Verify vehicles
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>✓ DGSN:</strong> Administrative access, Report management
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-title">Recent Official Activity</div>
+                <div id="recent-activity">
+                    <div class="alert alert-info">
+                        <strong>📊 Today's Statistics:</strong><br>
+                        • 45 vehicles verified<br>
+                        • 12 theft reports filed<br>
+                        • 8 sightings reported<br>
+                        • 3 vehicles recovered
+                    </div>
+                    <div class="alert alert-success">
+                        <strong>🏆 Recovery Success:</strong> 156 vehicles recovered in 2024 through citizen reporting
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Links -->
+            <div class="card">
+                <div class="card-title">Quick Resources</div>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                    <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; font-size: 12px;" onclick="window.open('https://www.police.cm')">Police Website</button>
+                    <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; font-size: 12px;" onclick="showEmergencyContacts()">Emergency Numbers</button>
+                    <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; font-size: 12px;" onclick="downloadTrainingManual()">Training Manual</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="../index.html" class="nav-item">🏠 Home</a>
+            <a href="verify-vehicle.html" class="nav-item">🔍 Verify</a>
+            <a href="report-sighting.html" class="nav-item">👁️ Report</a>
+            <a href="gov-login.html" class="nav-item active">👮 Govt</a>
+        </div>
+    </div>
+    
+    <script>
+        // Official verification codes mapping
+        const officialCodes = {
+            'POLICE123': { 
+                role: 'police', 
+                agency: 'National Police', 
+                level: 'full',
+                permissions: ['verify', 'track', 'dispatch', 'resolve', 'view_all_reports']
+            },
+            'GEND456': { 
+                role: 'gendarmerie', 
+                agency: 'Gendarmerie Nationale', 
+                level: 'full',
+                permissions: ['verify', 'track', 'dispatch', 'resolve', 'view_all_reports']
+            },
+            'TRANS789': { 
+                role: 'transport', 
+                agency: 'Ministry of Transport', 
+                level: 'medium',
+                permissions: ['verify', 'view_reports', 'generate_stats']
+            },
+            'DGSN2024': { 
+                role: 'dgsn', 
+                agency: 'DGSN', 
+                level: 'admin',
+                permissions: ['verify', 'track', 'dispatch', 'resolve', 'manage_officers', 'view_all_reports']
+            },
+            'GOV2024': { 
+                role: 'government', 
+                agency: 'Government Official', 
+                level: 'high',
+                permissions: ['verify', 'view_reports', 'view_stats']
+            },
+            'SECURITY456': { 
+                role: 'security', 
+                agency: 'Security Services', 
+                level: 'high',
+                permissions: ['verify', 'track', 'view_sensitive']
+            },
+            'CUSTOMS789': { 
+                role: 'customs', 
+                agency: 'Customs Department', 
+                level: 'medium',
+                permissions: ['verify', 'check_imports']
+            },
+            'INTERPOL001': { 
+                role: 'interpol', 
+                agency: 'INTERPOL Cameroon', 
+                level: 'full',
+                permissions: ['verify', 'track', 'international_access']
+            }
+        };
+        
+        document.getElementById('gov-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const agencyType = document.getElementById('agency-type').value;
+            const agencyId = document.getElementById('agency-id').value;
+            const verificationCode = document.getElementById('verification-code').value.toUpperCase();
+            const region = document.getElementById('region').value;
+            const contactPhone = document.getElementById('contact-phone').value;
+            
+            // Validate inputs
+            if (!agencyType) {
+                showAlert('Please select your agency', 'danger');
+                return;
+            }
+            
+            if (!agencyId) {
+                showAlert('Please enter your agency ID', 'danger');
+                return;
+            }
+            
+            if (!verificationCode) {
+                showAlert('Please enter your verification code', 'danger');
+                return;
+            }
+            
+            if (!region) {
+                showAlert('Please select your region of operation', 'danger');
+                return;
+            }
+            
+            // Check verification code
+            if (officialCodes[verificationCode]) {
+                const userData = {
+                    id: 'GOV_' + Date.now(),
+                    name: agencyId,
+                    agency: officialCodes[verificationCode].agency,
+                    role: officialCodes[verificationCode].role,
+                    level: officialCodes[verificationCode].level,
+                    region: region,
+                    contactPhone: contactPhone,
+                    permissions: officialCodes[verificationCode].permissions,
+                    loginTime: new Date().toISOString(),
+                    isGovernment: true
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('user', JSON.stringify(userData));
+                localStorage.setItem('govCode', verificationCode);
+                localStorage.setItem('govLoginTime', Date.now());
+                
+                // Log access
+                logGovernmentAccess(userData);
+                
+                showAlert(`Welcome ${officialCodes[verificationCode].agency}! Access granted.`, 'success');
+                
+                // Redirect to appropriate dashboard based on role
+                setTimeout(() => {
+                    if (officialCodes[verificationCode].level === 'admin') {
+                        window.location.href = 'admin-dashboard.html';
+                    } else {
+                        window.location.href = 'gov-dashboard.html';
+                    }
+                }, 1500);
+            } else {
+                // Log failed attempt
+                logFailedAttempt(agencyType, agencyId, verificationCode);
+                showAlert('Invalid verification code! Access denied. This incident has been logged.', 'danger');
+                
+                // Clear the code field
+                document.getElementById('verification-code').value = '';
+                document.getElementById('verification-code').focus();
+            }
+        });
+        
+        function logGovernmentAccess(userData) {
+            const accessLog = JSON.parse(localStorage.getItem('govAccessLog') || '[]');
+            accessLog.unshift({
+                timestamp: new Date().toISOString(),
+                agency: userData.agency,
+                officerId: userData.name,
+                region: userData.region,
+                action: 'LOGIN'
+            });
+            // Keep only last 100 entries
+            localStorage.setItem('govAccessLog', JSON.stringify(accessLog.slice(0, 100)));
+        }
+        
+        function logFailedAttempt(agency, id, code) {
+            const failedLog = JSON.parse(localStorage.getItem('failedGovLogins') || '[]');
+            failedLog.unshift({
+                timestamp: new Date().toISOString(),
+                agency: agency,
+                attemptedId: id,
+                attemptedCode: code,
+                ip: 'Client-side'
+            });
+            localStorage.setItem('failedGovLogins', JSON.stringify(failedLog.slice(0, 50)));
+            
+            // Show additional security message after multiple failures
+            const failures = failedLog.filter(log => 
+                new Date(log.timestamp) > new Date(Date.now() - 15 * 60 * 1000)
+            ).length;
+            
+            if (failures >= 3) {
+                showAlert('Multiple failed attempts detected. Account temporarily locked for 15 minutes.', 'danger');
+                document.getElementById('verification-code').disabled = true;
+                setTimeout(() => {
+                    document.getElementById('verification-code').disabled = false;
+                }, 900000); // 15 minutes
+            }
+        }
+        
+        function downloadTrainingManual() {
+            showAlert('Training manual download started. Check your downloads folder.', 'success');
+            // In production, this would download a real PDF
+            const content = "SSVIAS Government Training Manual\n\nVersion 1.0\n\nThis manual provides instructions for using the SSVIAS system...";
+            const blob = new Blob([content], {type: 'application/pdf'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'SSVIAS_Training_Manual.pdf';
+            a.click();
+        }
+        
+        // Auto-fill demo credentials for testing (remove in production)
+        function fillDemoCredentials(code) {
+            document.getElementById('verification-code').value = code;
+            showAlert(`Demo code ${code} filled. Click login to continue.`, 'info');
+        }
+        
+        // Add quick demo buttons
+        const demoButtons = document.createElement('div');
+        demoButtons.style.marginTop = '10px';
+        demoButtons.style.display = 'flex';
+        demoButtons.style.flexWrap = 'wrap';
+        demoButtons.style.gap = '8px';
+        demoButtons.innerHTML = `
+            <small>Quick Demo:</small>
+            <button type="button" class="btn" style="width: auto; padding: 4px 8px; font-size: 11px;" onclick="fillDemoCredentials('POLICE123')">Police</button>
+            <button type="button" class="btn" style="width: auto; padding: 4px 8px; font-size: 11px;" onclick="fillDemoCredentials('GEND456')">Gendarmerie</button>
+            <button type="button" class="btn" style="width: auto; padding: 4px 8px; font-size: 11px;" onclick="fillDemoCredentials('TRANS789')">Transport</button>
+            <button type="button" class="btn" style="width: auto; padding: 4px 8px; font-size: 11px;" onclick="fillDemoCredentials('DGSN2024')">DGSN</button>
+        `;
+        document.querySelector('.card:first-of-type .card-title').after(demoButtons);
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

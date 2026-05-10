@@ -1,0 +1,96 @@
+<!-- pages/login.html - Citizen Login Page -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Citizen Login - SSVIAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>🔐 Citizen Login</span>
+            <span>SSVIAS Cameroon</span>
+        </div>
+        
+        <div class="header">
+            <h1>Welcome Back</h1>
+            <p>Login to your account</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <div class="card">
+                <div class="card-title">Citizen Login</div>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label>📧 Email Address</label>
+                        <input type="email" id="email" placeholder="you@example.com" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔒 Password</label>
+                        <input type="password" id="password" placeholder="Enter your password" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    
+                    <div style="text-align: center; margin-top: 15px;">
+                        <a href="#" style="color: var(--primary-color);">Forgot Password?</a>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">New Here?</div>
+                <p>Create an account to register your vehicles and report theft.</p>
+                <button class="btn btn-secondary" onclick="window.location.href='register.html'">Create Account</button>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Demo Credentials</div>
+                <div class="alert alert-info">
+                    <strong>Test Account:</strong><br>
+                    Email: user@example.com<br>
+                    Password: password123
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="../index.html" class="nav-item">🏠 Home</a>
+            <a href="verify-vehicle.html" class="nav-item">🔍 Verify</a>
+            <a href="report-sighting.html" class="nav-item">🚨 Report</a>
+            <a href="login.html" class="nav-item active">👤 Login</a>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            showAlert('Logging in...', 'info');
+            
+            const result = await API.login(email, password);
+            
+            if (result.success) {
+                localStorage.setItem('user', JSON.stringify(result.user));
+                showAlert('Login successful! Redirecting...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'user-dashboard.html';
+                }, 1500);
+            } else {
+                showAlert('Invalid email or password', 'danger');
+            }
+        });
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!-- pages/scan-plate.html - AI Camera Scan Page -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>AI Plate Scanner - SSVIAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>🤖 AI Recognition</span>
+            <span>Smart Scanner</span>
+        </div>
+        
+        <div class="header">
+            <h1>📱 AI License Plate Scanner</h1>
+            <p>Point camera at license plate</p>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <!-- Live Camera View -->
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <video id="live-camera" autoplay playsinline style="width: 100%; height: auto; background: #000;"></video>
+                <div style="padding: 16px; text-align: center;">
+                    <button id="scan-btn" class="btn btn-primary">🔍 Scan Now</button>
+                    <button id="upload-btn" class="btn btn-secondary" style="margin-top: 10px;">📁 Upload Photo</button>
+                </div>
+            </div>
+            
+            <!-- Scan Results -->
+            <div id="results" style="display: none;">
+                <div class="result-card">
+                    <h3>Scan Result</h3>
+                    <div id="recognized-plate" style="font-size: 32px; font-weight: bold;"></div>
+                    <div id="plate-validation"></div>
+                    <button id="verify-scanned" class="btn btn-success" style="margin-top: 20px;">Verify This Vehicle</button>
+                    <button id="scan-again" class="btn" style="margin-top: 10px; background: #6c5ce7;">Scan Again</button>
+                </div>
+            </div>
+            
+            <!-- Instructions -->
+            <div class="card">
+                <div class="card-title">How to Scan</div>
+                <ul style="padding-left: 20px;">
+                    <li>Hold camera steady</li>
+                    <li>Ensure good lighting</li>
+                    <li>Center the license plate</li>
+                    <li>Wait for AI processing</li>
+                </ul>
+                <div class="alert alert-info" style="margin-top: 10px;">
+                    <strong>Cameroon Plate Format:</strong><br>
+                    AB123CD (2 letters + 3 numbers + 2 letters)
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let videoStream = null;
+        let currentPlateNumber = null;
+        
+        // Start camera
+        async function startCamera() {
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: 'environment' }
+                });
+                const video = document.getElementById('live-camera');
+                video.srcObject = videoStream;
+                await video.play();
+                return true;
+            } catch (error) {
+                showAlert('Cannot access camera. Please check permissions.', 'danger');
+                return false;
+            }
+        }
+        
+        // Capture and recognize
+        async function captureAndRecognize() {
+            const video = document.getElementById('live-camera');
+            if (!video.videoWidth) {
+                showAlert('Please wait for camera to initialize', 'danger');
+                return;
+            }
+            
+            // Create canvas and capture frame
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert to blob
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+            const file = new File([blob], 'scan.jpg', { type: 'image/jpeg' });
+            
+            showAlert('Processing image with AI...', 'info');
+            
+            // Use Tesseract OCR
+            const worker = await Tesseract.createWorker();
+            await worker.loadLanguage('eng');
+            await worker.initialize('eng');
+            await worker.setParameters({
+                tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+            });
+            
+            const { data: { text } } = await worker.recognize(file);
+            await worker.terminate();
+            
+            // Extract plate number
+            let plate = text.replace(/\s/g, '').toUpperCase();
+            const plateMatch = plate.match(/[A-Z]{2}[0-9]{3}[A-Z]{2}/);
+            
+            if (plateMatch) {
+                currentPlateNumber = plateMatch[0];
+                document.getElementById('recognized-plate').textContent = currentPlateNumber;
+                document.getElementById('plate-validation').innerHTML = '<span style="color: #27ae60;">✓ Valid Cameroon plate format</span>';
+                document.getElementById('results').style.display = 'block';
+                document.querySelector('.card:first-of-type').style.display = 'none';
+                showAlert(`Plate recognized: ${currentPlateNumber}`, 'success');
+            } else {
+                showAlert('Could not recognize plate. Please try again with better lighting.', 'danger');
+            }
+        }
+        
+        // Upload image from gallery
+        function uploadImage() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const worker = await Tesseract.createWorker();
+                    await worker.loadLanguage('eng');
+                    await worker.initialize('eng');
+                    
+                    const { data: { text } } = await worker.recognize(file);
+                    await worker.terminate();
+                    
+                    let plate = text.replace(/\s/g, '').toUpperCase();
+                    const plateMatch = plate.match(/[A-Z]{2}[0-9]{3}[A-Z]{2}/);
+                    
+                    if (plateMatch) {
+                        currentPlateNumber = plateMatch[0];
+                        document.getElementById('recognized-plate').textContent = currentPlateNumber;
+                        document.getElementById('results').style.display = 'block';
+                    } else {
+                        showAlert('No valid plate found in image', 'danger');
+                    }
+                }
+            };
+            input.click();
+        }
+        
+        // Verify scanned plate
+        async function verifyScanned() {
+            if (currentPlateNumber) {
+                showAlert(`Verifying ${currentPlateNumber}...`, 'info');
+                const result = await API.verifyVehicle(currentPlateNumber);
+                
+                if (result.success && result.vehicle) {
+                    localStorage.setItem('lastVerification', JSON.stringify(result.vehicle));
+                    window.location.href = 'vehicle-status.html';
+                } else {
+                    showAlert('Vehicle not found in database', 'danger');
+                }
+            }
+        }
+        
+        // Reset scanner
+        function resetScanner() {
+            document.getElementById('results').style.display = 'none';
+            document.querySelector('.card:first-of-type').style.display = 'block';
+            currentPlateNumber = null;
+        }
+        
+        // Initialize
+        startCamera();
+        
+        document.getElementById('scan-btn').onclick = captureAndRecognize;
+        document.getElementById('upload-btn').onclick = uploadImage;
+        document.getElementById('verify-scanned').onclick = verifyScanned;
+        document.getElementById('scan-again').onclick = resetScanner;
+        
+        // Cleanup on page unload
+        window.onbeforeunload = () => {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+            }
+        };
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

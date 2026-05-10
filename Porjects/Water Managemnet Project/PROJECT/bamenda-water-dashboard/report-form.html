@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Water Issue - Bamenda Water & Health Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .observation-icons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        .observation-card {
+            text-align: center;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .observation-card:hover {
+            border-color: var(--primary-green);
+            transform: translateY(-2px);
+        }
+        .observation-card.selected {
+            border-color: var(--primary-green);
+            background-color: #e8f5e9;
+        }
+        .observation-emoji {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .observation-title {
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        .photo-preview {
+            margin-top: 1rem;
+            max-width: 200px;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .photo-preview img {
+            width: 100%;
+            height: auto;
+        }
+        .help-text {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="health-dashboard.html">Health Data</a></li>
+                <li><a href="report-form.html" class="active">Report Issue</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <div class="form-container">
+            <div class="card">
+                <div class="card-header">
+                    <h1>📢 Report a Water Issue</h1>
+                    <p>Your observations help keep the community informed about water quality. Please provide as much detail as possible.</p>
+                </div>
+                
+                <form id="report-form" enctype="multipart/form-data">
+                    <!-- Water Source Selection -->
+                    <div class="form-group">
+                        <label for="source_id">Water Source *</label>
+                        <select id="source_id" name="source_id" class="form-control" required>
+                            <option value="">Select a water source</option>
+                        </select>
+                        <div class="help-text">Choose the water source you're reporting about</div>
+                    </div>
+                    
+                    <!-- Observation Type with Icons -->
+                    <div class="form-group">
+                        <label>What did you observe? *</label>
+                        <div class="observation-icons" id="observation-icons">
+                            <div class="observation-card" data-value="clear">
+                                <div class="observation-emoji">💧</div>
+                                <div class="observation-title">Clear Water</div>
+                            </div>
+                            <div class="observation-card" data-value="cloudy">
+                                <div class="observation-emoji">☁️</div>
+                                <div class="observation-title">Cloudy Water</div>
+                            </div>
+                            <div class="observation-card" data-value="bad_smell">
+                                <div class="observation-emoji">👃</div>
+                                <div class="observation-title">Bad Smell</div>
+                            </div>
+                            <div class="observation-card" data-value="bad_taste">
+                                <div class="observation-emoji">😖</div>
+                                <div class="observation-title">Bad Taste</div>
+                            </div>
+                            <div class="observation-card" data-value="dumping">
+                                <div class="observation-emoji">🗑️</div>
+                                <div class="observation-title">Waste Dumping</div>
+                            </div>
+                            <div class="observation-card" data-value="other">
+                                <div class="observation-emoji">📝</div>
+                                <div class="observation-title">Other Issue</div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="observation_type" name="observation_type" required>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div class="form-group">
+                        <label for="description">Detailed Description</label>
+                        <textarea id="description" name="description" class="form-control" rows="4" placeholder="Please describe what you observed in detail..."></textarea>
+                        <div class="help-text">Include any relevant details like time of day, weather conditions, etc.</div>
+                    </div>
+                    
+                    <!-- Photo Upload -->
+                    <div class="form-group">
+                        <label for="photo">Upload Photo (Optional)</label>
+                        <input type="file" id="photo" name="photo" class="form-control" accept="image/*">
+                        <div class="help-text">Photos help us verify and address issues faster</div>
+                        <div id="photo-preview" class="photo-preview"></div>
+                    </div>
+                    
+                    <!-- Reporter Information -->
+                    <div class="form-group">
+                        <label for="reporter_name">Your Name (Optional)</label>
+                        <input type="text" id="reporter_name" name="reporter_name" class="form-control" placeholder="Anonymous">
+                        <div class="help-text">Your name will be shown with the report if provided</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="reporter_contact">Contact (Optional)</label>
+                        <input type="text" id="reporter_contact" name="reporter_contact" class="form-control" placeholder="Email or phone for follow-up">
+                        <div class="help-text">We may contact you for more information</div>
+                    </div>
+                    
+                    <!-- Disclaimer -->
+                    <div class="alert alert-info">
+                        <strong>📋 Before You Submit:</strong>
+                        <ul style="margin-top: 0.5rem; margin-left: 1rem;">
+                            <li>Your report will be reviewed by administrators before being published</li>
+                            <li>False reports may be removed</li>
+                            <li>This information helps your community stay safe</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-primary btn-block">Submit Report</button>
+                </form>
+            </div>
+            
+            <!-- Why Report Section -->
+            <div class="card">
+                <h3>Why Your Report Matters</h3>
+                <div class="row">
+                    <div class="col">
+                        <div style="text-align: center; padding: 1rem;">
+                            <div style="font-size: 2rem;">👥</div>
+                            <h4>Protect Neighbors</h4>
+                            <p>Alert others to potential water issues</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div style="text-align: center; padding: 1rem;">
+                            <div style="font-size: 2rem;">🏥</div>
+                            <h4>Prevent Disease</h4>
+                            <p>Early warning helps prevent outbreaks</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div style="text-align: center; padding: 1rem;">
+                            <div style="font-size: 2rem;">📊</div>
+                            <h4>Improve Data</h4>
+                            <p>Better data leads to better decisions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>⚠️ <strong>Disclaimer:</strong> Community reports are not a substitute for official water testing.</p>
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="js/main.js"></script>
+<script src="js/mock-api.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/map.js"></script>
+    <script>
+        let selectedObservation = null;
+        
+        // Get source ID from URL if provided
+        const urlParams = new URLSearchParams(window.location.search);
+        const preselectedSource = urlParams.get('source');
+        
+        // Load water sources for dropdown
+        async function loadWaterSources() {
+            try {
+                const result = await API.get('/sources');
+                const sources = result.data;
+                const select = document.getElementById('source_id');
+                
+                select.innerHTML = '<option value="">Select a water source</option>' +
+                    sources.map(source => 
+                        `<option value="${source.id}" ${preselectedSource == source.id ? 'selected' : ''}>
+                            ${escapeHtml(source.name)} - ${escapeHtml(source.location_desc)}
+                            (${getStatusText(source.safety_status)})
+                        </option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Error loading water sources:', error);
+                showAlert('Error loading water sources. Please refresh the page.', 'danger');
+            }
+        }
+        
+        // Handle observation card selection
+        function initObservationCards() {
+            const cards = document.querySelectorAll('.observation-card');
+            cards.forEach(card => {
+                card.addEventListener('click', () => {
+                    // Remove selected class from all cards
+                    cards.forEach(c => c.classList.remove('selected'));
+                    // Add selected class to clicked card
+                    card.classList.add('selected');
+                    // Set hidden input value
+                    selectedObservation = card.dataset.value;
+                    document.getElementById('observation_type').value = selectedObservation;
+                });
+            });
+        }
+        
+        // Handle photo preview
+        function initPhotoPreview() {
+            const photoInput = document.getElementById('photo');
+            const previewDiv = document.getElementById('photo-preview');
+            
+            photoInput.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        previewDiv.innerHTML = `
+                            <img src="${event.target.result}" alt="Preview">
+                            <button type="button" onclick="clearPhoto()" class="btn btn-sm btn-danger" style="margin-top: 0.5rem;">Remove</button>
+                        `;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        function clearPhoto() {
+            document.getElementById('photo').value = '';
+            document.getElementById('photo-preview').innerHTML = '';
+        }
+        
+        // Handle form submission
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            // Validate required fields
+            const sourceId = document.getElementById('source_id').value;
+            const observationType = document.getElementById('observation_type').value;
+            
+            if (!sourceId) {
+                showAlert('Please select a water source', 'warning');
+                document.getElementById('source_id').focus();
+                return;
+            }
+            
+            if (!observationType) {
+                showAlert('Please select what you observed', 'warning');
+                return;
+            }
+            
+            // Collect form data
+            const formData = {
+                source_id: parseInt(sourceId),
+                observation_type: observationType,
+                description: document.getElementById('description').value,
+                reporter_name: document.getElementById('reporter_name').value || 'Anonymous',
+                reporter_contact: document.getElementById('reporter_contact').value,
+                report_date: new Date().toISOString().split('T')[0],
+                status: 'pending'
+            };
+            
+            // Show loading state
+            const submitBtn = document.querySelector('#report-form button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Submitting...';
+            submitBtn.disabled = true;
+            
+            try {
+                // For demo, we'll use the API post
+                const result = await API.post('/reports', formData);
+                
+                if (result.success) {
+                    showAlert('Report submitted successfully! Redirecting...', 'success');
+                    // Redirect to success page
+                    setTimeout(() => {
+                        window.location.href = 'report-success.html';
+                    }, 1500);
+                } else {
+                    throw new Error(result.error || 'Submission failed');
+                }
+            } catch (error) {
+                console.error('Error submitting report:', error);
+                showAlert('Error submitting report. Please try again.', 'danger');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+        
+        // Add to window for global access
+        window.clearPhoto = clearPhoto;
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadWaterSources();
+            initObservationCards();
+            initPhotoPreview();
+            
+            const form = document.getElementById('report-form');
+            form.addEventListener('submit', handleSubmit);
+        });
+    </script>
+</body>
+</html>

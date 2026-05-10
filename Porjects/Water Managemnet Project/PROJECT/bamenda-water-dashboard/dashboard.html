@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Bamenda Water & Health Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .filter-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .filter-select {
+            padding: 0.5rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            background: var(--bg-white);
+        }
+        .kpi-card {
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+        .kpi-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        .kpi-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        .trend-up { color: #4caf50; }
+        .trend-down { color: #f44336; }
+        .trend-neutral { color: #ffc107; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                <li><a href="health-dashboard.html">Health Data</a></li>
+                <li><a href="report-form.html">Report Issue</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+            <div>
+                <h1>Water Quality Dashboard</h1>
+                <p>Real-time monitoring and analytics for Mankon water sources</p>
+            </div>
+            <div class="filter-bar">
+                <select id="status-filter" class="filter-select" onchange="applyFilters()">
+                    <option value="all">All Status</option>
+                    <option value="safe">Safe Only</option>
+                    <option value="caution">Caution Only</option>
+                    <option value="unsafe">Unsafe Only</option>
+                </select>
+                <select id="type-filter" class="filter-select" onchange="applyFilters()">
+                    <option value="all">All Types</option>
+                    <option value="spring">Springs</option>
+                    <option value="well">Wells</option>
+                    <option value="tap">Taps</option>
+                    <option value="borehole">Boreholes</option>
+                </select>
+                <input type="text" id="search-filter" class="search-input" placeholder="Search..." style="width: 200px;" onkeyup="applyFilters()">
+            </div>
+        </div>
+        
+        <!-- KPI Cards -->
+        <div class="stats-grid" id="kpi-cards">
+            <div class="kpi-card">
+                <div class="kpi-value" id="total-sources">0</div>
+                <div class="kpi-label">Total Sources</div>
+            </div>
+            <div class="kpi-card" style="background: linear-gradient(135deg, #4caf50, #2e7d32);">
+                <div class="kpi-value" id="safe-sources">0</div>
+                <div class="kpi-label">Safe Sources</div>
+                <div id="safe-trend" class="trend-up">↑ 12%</div>
+            </div>
+            <div class="kpi-card" style="background: linear-gradient(135deg, #ffc107, #ff9800);">
+                <div class="kpi-value" id="caution-sources">0</div>
+                <div class="kpi-label">Caution Sources</div>
+                <div id="caution-trend" class="trend-neutral">→ 0%</div>
+            </div>
+            <div class="kpi-card" style="background: linear-gradient(135deg, #f44336, #d32f2f);">
+                <div class="kpi-value" id="unsafe-sources">0</div>
+                <div class="kpi-label">Unsafe Sources</div>
+                <div id="unsafe-trend" class="trend-down">↓ 8%</div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-container">
+            <div class="chart-card">
+                <h3>Water Quality Trend (Last 6 Months)</h3>
+                <canvas id="quality-trend-chart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3>Status Distribution</h3>
+                <canvas id="status-distribution-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="card">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('reports')">Recent Reports</button>
+                <button class="tab-btn" onclick="showTab('sources')">All Sources</button>
+                <button class="tab-btn" onclick="showTab('health')">Health Correlation</button>
+                <button class="tab-btn" onclick="showTab('alerts')">Alerts</button>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="reports-tab" class="tab-content active">
+                <div class="report-feed" id="reports-feed">
+                    <p>Loading reports...</p>
+                </div>
+            </div>
+            
+            <!-- Sources Tab -->
+            <div id="sources-tab" class="tab-content">
+                <div class="table-responsive">
+                    <table class="data-table" id="sources-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Type</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Last Tested</th>
+                                <th>Safety Score</th>
+                                <th>Action</th>
+                            </thead>
+                            <tbody id="sources-table-body">
+                                <tr><td colspan="7">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Health Tab -->
+            <div id="health-tab" class="tab-content">
+                <div class="alert alert-info">
+                    <span>🏥</span>
+                    <strong>Health Data Integration:</strong> This data is simulated for demonstration purposes, showing the potential connection between water quality and disease patterns.
+                </div>
+                <canvas id="disease-correlation-chart" style="height: 400px;"></canvas>
+                <div class="row" style="margin-top: 1rem;">
+                    <div class="col">
+                        <div class="info-item">
+                            <div class="info-label">Correlation Strength</div>
+                            <div class="info-value">0.78 (Strong Positive)</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="info-item">
+                            <div class="info-label">At-Risk Population</div>
+                            <div class="info-value">~2,500 people</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Alerts Tab -->
+            <div id="alerts-tab" class="tab-content">
+                <div id="alerts-list">
+                    <p>Loading alerts...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export Section (for authorized users) -->
+        <div id="export-section" style="display: none;" class="card">
+            <h3>📊 Export Data</h3>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button onclick="exportData('csv')" class="btn btn-secondary">Export as CSV</button>
+                <button onclick="exportData('pdf')" class="btn btn-secondary">Export as PDF</button>
+                <button onclick="exportData('excel')" class="btn btn-secondary">Export as Excel</button>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>⚠️ <strong>Disclaimer:</strong> Information is for guidance only. Always consult official water testing authorities for health decisions.</p>
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+   <script src="js/main.js"></script>
+<script src="js/mock-api.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/map.js"></script>
+    <script>
+        let qualityChart, distributionChart, correlationChart;
+        let allSources = [];
+        let allReports = [];
+        
+        // Show/hide export section based on permissions
+        if (hasPermission('view_dashboard')) {
+            document.getElementById('export-section').style.display = 'block';
+        }
+        
+        async function loadDashboardData() {
+            try {
+                const sourcesResult = await API.get('/sources');
+                const reportsResult = await API.get('/reports');
+                const diseaseData = await API.get('/disease-data');
+                
+                allSources = sourcesResult.data;
+                allReports = reportsResult.data;
+                
+                // Update KPI cards
+                updateKPIs();
+                
+                // Load reports feed
+                loadReportsFeed();
+                
+                // Load sources table
+                loadSourcesTable();
+                
+                // Load alerts
+                loadAlerts();
+                
+                // Initialize charts
+                initQualityTrendChart(allSources);
+                initStatusDistributionChart(allSources);
+                initCorrelationChart(diseaseData.data);
+                
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showAlert('Error loading dashboard data', 'danger');
+            }
+        }
+        
+        function updateKPIs() {
+            const total = allSources.length;
+            const safe = allSources.filter(s => s.safety_status === 'safe').length;
+            const caution = allSources.filter(s => s.safety_status === 'caution').length;
+            const unsafe = allSources.filter(s => s.safety_status === 'unsafe').length;
+            
+            document.getElementById('total-sources').textContent = total;
+            document.getElementById('safe-sources').textContent = safe;
+            document.getElementById('caution-sources').textContent = caution;
+            document.getElementById('unsafe-sources').textContent = unsafe;
+        }
+        
+        function loadReportsFeed() {
+            const approvedReports = allReports.filter(r => r.status === 'approved').slice(0, 10);
+            
+            if (approvedReports.length > 0) {
+                const reportsHtml = approvedReports.map(report => {
+                    const source = allSources.find(s => s.id === report.source_id);
+                    return `
+                        <div class="report-item">
+                            <div class="report-header">
+                                <strong>${escapeHtml(source ? source.name : 'Unknown Source')}</strong>
+                                <span class="report-date">${formatDate(report.report_date)}</span>
+                            </div>
+                            <span class="report-type ${report.observation_type}">${getObservationTypeText(report.observation_type)}</span>
+                            <p>${escapeHtml(report.description || 'No description provided')}</p>
+                            <small>Reported by: ${escapeHtml(report.reporter_name || 'Anonymous')}</small>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('reports-feed').innerHTML = reportsHtml;
+            } else {
+                document.getElementById('reports-feed').innerHTML = '<p>No reports yet. <a href="report-form.html">Be the first to report</a>!</p>';
+            }
+        }
+        
+        function loadSourcesTable() {
+            const statusFilter = document.getElementById('status-filter').value;
+            const typeFilter = document.getElementById('type-filter').value;
+            const searchTerm = document.getElementById('search-filter').value.toLowerCase();
+            
+            let filteredSources = [...allSources];
+            
+            if (statusFilter !== 'all') {
+                filteredSources = filteredSources.filter(s => s.safety_status === statusFilter);
+            }
+            if (typeFilter !== 'all') {
+                filteredSources = filteredSources.filter(s => s.source_type === typeFilter);
+            }
+            if (searchTerm) {
+                filteredSources = filteredSources.filter(s => 
+                    s.name.toLowerCase().includes(searchTerm) || 
+                    s.location_desc.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            const tableHtml = filteredSources.map(source => {
+                const safetyScore = calculateSafetyScore(source);
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(source.name)}</strong></td>
+                        <td>${capitalizeFirst(source.source_type)}</td>
+                        <td>${escapeHtml(source.location_desc)}</td>
+                        <td><span class="status-badge status-${source.safety_status}">${getStatusText(source.safety_status)}</span></td>
+                        <td>${formatDate(source.last_test_date)}</td>
+                        <td>
+                            <div style="background: #e0e0e0; border-radius: 10px; overflow: hidden; width: 60px;">
+                                <div style="background: ${getScoreColor(safetyScore)}; width: ${safetyScore}%; height: 8px;"></div>
+                            </div>
+                            <span style="font-size: 0.75rem;">${safetyScore}%</span>
+                        </td>
+                        <td><a href="water-source.html?id=${source.id}" class="btn btn-sm btn-secondary">View</a></td>
+                    </tr>
+                `;
+            }).join('');
+            
+            document.getElementById('sources-table-body').innerHTML = tableHtml || '<tr><td colspan="7">No sources match your filters</td></tr>';
+        }
+        
+        function calculateSafetyScore(source) {
+            // Calculate based on status
+            switch(source.safety_status) {
+                case 'safe': return 85 + Math.floor(Math.random() * 15);
+                case 'caution': return 50 + Math.floor(Math.random() * 25);
+                case 'unsafe': return 10 + Math.floor(Math.random() * 30);
+                default: return 50;
+            }
+        }
+        
+        function getScoreColor(score) {
+            if (score >= 80) return '#4caf50';
+            if (score >= 50) return '#ffc107';
+            return '#f44336';
+        }
+        
+        function loadAlerts() {
+            const unsafeSources = allSources.filter(s => s.safety_status === 'unsafe');
+            const recentUnsafeReports = allReports.filter(r => 
+                r.status === 'approved' && 
+                r.observation_type !== 'clear' &&
+                new Date(r.report_date) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+            );
+            
+            let alertsHtml = '';
+            
+            if (unsafeSources.length > 0) {
+                alertsHtml += `
+                    <div class="alert alert-danger">
+                        <strong>🔴 URGENT:</strong> ${unsafeSources.length} water source(s) are currently marked as UNSAFE. DO NOT drink from these sources.
+                        <ul>
+                            ${unsafeSources.map(s => `<li>${escapeHtml(s.name)} - ${escapeHtml(s.location_desc)}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (recentUnsafeReports.length > 0) {
+                alertsHtml += `
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Recent Reports:</strong> ${recentUnsafeReports.length} concerning report(s) submitted in the last 7 days.
+                        <ul>
+                            ${recentUnsafeReports.slice(0, 5).map(r => {
+                                const source = allSources.find(s => s.id === r.source_id);
+                                return `<li>${escapeHtml(source ? source.name : 'Unknown')}: ${getObservationTypeText(r.observation_type)}</li>`;
+                            }).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (alertsHtml === '') {
+                alertsHtml = '<div class="alert alert-success">✅ No active alerts. All water sources are within normal parameters.</div>';
+            }
+            
+            document.getElementById('alerts-list').innerHTML = alertsHtml;
+        }
+        
+        function initQualityTrendChart(sources) {
+            const ctx = document.getElementById('quality-trend-chart').getContext('2d');
+            
+            const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
+            const safeTrend = [3, 4, 4, 5, 5, sources.filter(s => s.safety_status === 'safe').length];
+            const unsafeTrend = [2, 2, 1, 1, 1, sources.filter(s => s.safety_status === 'unsafe').length];
+            
+            if (qualityChart) qualityChart.destroy();
+            
+            qualityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: 'Safe Sources',
+                            data: safeTrend,
+                            borderColor: '#4caf50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Unsafe Sources',
+                            data: unsafeTrend,
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' }
+                    }
+                }
+            });
+        }
+        
+        function initStatusDistributionChart(sources) {
+            const ctx = document.getElementById('status-distribution-chart').getContext('2d');
+            
+            const safeCount = sources.filter(s => s.safety_status === 'safe').length;
+            const cautionCount = sources.filter(s => s.safety_status === 'caution').length;
+            const unsafeCount = sources.filter(s => s.safety_status === 'unsafe').length;
+            
+            if (distributionChart) distributionChart.destroy();
+            
+            distributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Safe', 'Caution', 'Unsafe'],
+                    datasets: [{
+                        data: [safeCount, cautionCount, unsafeCount],
+                        backgroundColor: ['#4caf50', '#ffc107', '#f44336'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'bottom' }
+                    }
+                }
+            });
+        }
+        
+        function initCorrelationChart(diseaseData) {
+            const ctx = document.getElementById('disease-correlation-chart').getContext('2d');
+            const weeks = diseaseData.weekly.map(w => w.week);
+            const waterborne = diseaseData.weekly.map(w => w.typhoid + w.diarrhea);
+            const unsafePercentage = [28, 25, 22, 20, 18, 15, 12];
+            
+            if (correlationChart) correlationChart.destroy();
+            
+            correlationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weeks,
+                    datasets: [
+                        {
+                            label: 'Waterborne Disease Cases',
+                            data: waterborne,
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Unsafe Water Sources (%)',
+                            data: unsafePercentage,
+                            borderColor: '#ff9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            fill: true,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Number of Cases' },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            position: 'right',
+                            title: { display: true, text: 'Unsafe Sources (%)' },
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+            
+            // Update active button state
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        function applyFilters() {
+            loadSourcesTable();
+        }
+        
+        function exportData(format) {
+            showAlert(`Exporting data as ${format.toUpperCase()}... (Demo functionality)`, 'info');
+        }
+        
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>

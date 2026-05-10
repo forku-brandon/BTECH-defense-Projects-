@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Officer Dashboard - Bamenda Water & Health</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .dashboard-header {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            color: white;
+            padding: 2rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 2rem;
+        }
+        .form-section {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+        }
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card-water {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+        .stat-card-safe {
+            background: linear-gradient(135deg, #4caf50, #2e7d32);
+        }
+        .stat-card-caution {
+            background: linear-gradient(135deg, #ffc107, #ff9800);
+        }
+        .stat-card-unsafe {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+        .test-status-pass {
+            color: #4caf50;
+            font-weight: bold;
+        }
+        .test-status-fail {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .source-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+        }
+        .source-card:hover {
+            box-shadow: var(--shadow);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../report-form.html">Report Issue</a></li>
+            </ul>
+            <div class="nav-right">
+                <div class="auth-buttons" id="auth-buttons">
+                    <a href="../login.html" class="btn-nav btn-nav-login">Login</a>
+                    <a href="../register.html" class="btn-nav btn-nav-register">Sign Up</a>
+                </div>
+                <div class="user-menu-container" id="user-menu-container"></div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <div class="dashboard-header">
+            <h1>💧 Water Quality Officer Dashboard</h1>
+            <p>Manage water sources, add test results, and monitor water quality across Mankon</p>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="stat-card-water stat-card-safe">
+                <div class="stat-value" id="safe-sources">0</div>
+                <div class="stat-label">Safe Sources</div>
+            </div>
+            <div class="stat-card-water stat-card-caution">
+                <div class="stat-value" id="caution-sources">0</div>
+                <div class="stat-label">Needs Attention</div>
+            </div>
+            <div class="stat-card-water stat-card-unsafe">
+                <div class="stat-value" id="unsafe-sources">0</div>
+                <div class="stat-label">Critical Issues</div>
+            </div>
+            <div class="stat-card-water">
+                <div class="stat-value" id="total-tests">0</div>
+                <div class="stat-label">Tests Conducted</div>
+            </div>
+        </div>
+        
+        <!-- Add Test Result Section -->
+        <div class="form-section">
+            <h3>🔬 Add New Water Test Result</h3>
+            <form id="test-result-form">
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Water Source *</label>
+                            <select id="test-source" class="form-control" required>
+                                <option value="">Select water source</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Test Date *</label>
+                            <input type="date" id="test-date" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label>pH Level</label>
+                            <input type="number" id="test-ph" class="form-control" step="0.1" placeholder="6.5 - 8.5">
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Turbidity</label>
+                            <select id="test-turbidity" class="form-control">
+                                <option value="">Select</option>
+                                <option value="Low">Low - Clear</option>
+                                <option value="Medium">Medium - Slightly cloudy</option>
+                                <option value="High">High - Very cloudy</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-option">
+                        <input type="checkbox" id="test-coliform"> Coliform Bacteria Present
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Tested By *</label>
+                    <input type="text" id="test-tested-by" class="form-control" required placeholder="e.g., MINEE, NGO Name">
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="test-notes" class="form-control" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Test Result</button>
+            </form>
+        </div>
+        
+        <!-- Add New Water Source Section -->
+        <div class="form-section">
+            <h3>📍 Add New Water Source</h3>
+            <button onclick="showAddSourceModal()" class="btn btn-secondary">+ Add Water Source</button>
+        </div>
+        
+        <!-- Water Quality Trend Chart -->
+        <div class="form-section">
+            <h3>📈 Water Quality Trend (Last 6 Months)</h3>
+            <canvas id="quality-trend-chart" style="height: 300px;"></canvas>
+        </div>
+        
+        <!-- Pending Tasks -->
+        <div class="form-section">
+            <h3>⏰ Pending Tasks</h3>
+            <div id="pending-tasks"></div>
+        </div>
+        
+        <!-- Recent Test Results -->
+        <div class="form-section">
+            <h3>📊 Recent Test Results</h3>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr><th>Date</th><th>Source</th><th>pH</th><th>Turbidity</th><th>Coliform</th><th>Status</th><th>Tested By</th></tr>
+                    </thead>
+                    <tbody id="recent-tests-body"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- All Water Sources -->
+        <div class="form-section">
+            <h3>💧 All Water Sources</h3>
+            <div id="water-sources-list"></div>
+        </div>
+    </main>
+    
+    <!-- Add Source Modal -->
+    <div id="add-source-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Water Source</h3>
+                <button class="close-btn" onclick="closeModal('add-source-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-source-form">
+                    <div class="form-group">
+                        <label>Source Name *</label>
+                        <input type="text" id="source-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Location *</label>
+                        <input type="text" id="source-location" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Type *</label>
+                        <select id="source-type" class="form-control" required>
+                            <option value="spring">Spring</option>
+                            <option value="well">Well</option>
+                            <option value="tap">Tap</option>
+                            <option value="borehole">Borehole</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Latitude *</label>
+                                <input type="number" id="source-lat" class="form-control" step="any" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Longitude *</label>
+                                <input type="number" id="source-lng" class="form-control" step="any" required>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Source</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Bamenda Water & Health Dashboard</p>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="../js/main.js"></script>
+    <script src="../js/mock-api.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        let qualityChart;
+        let waterSources = [];
+        let allTests = [];
+        
+        // Check authentication and role
+        if (!checkAuth()) {
+            window.location.href = '../login.html';
+        } else if (currentUser && currentUser.role !== 'data_entry' && currentUser.role !== 'admin') {
+            showAlert('Access denied. Water officer privileges required.', 'danger');
+            setTimeout(() => {
+                window.location.href = DASHBOARD_URLS[currentUser.role];
+            }, 2000);
+        }
+        
+        async function loadData() {
+            try {
+                const sources = await API.get('/sources');
+                waterSources = sources.data;
+                
+                const safeCount = waterSources.filter(s => s.safety_status === 'safe').length;
+                const cautionCount = waterSources.filter(s => s.safety_status === 'caution').length;
+                const unsafeCount = waterSources.filter(s => s.safety_status === 'unsafe').length;
+                
+                let totalTests = 0;
+                for (const source of waterSources) {
+                    const tests = await API.get('/tests', { source_id: source.id });
+                    allTests.push(...tests.data.map(t => ({ ...t, source_name: source.name })));
+                    totalTests += tests.data.length;
+                }
+                
+                document.getElementById('safe-sources').textContent = safeCount;
+                document.getElementById('caution-sources').textContent = cautionCount;
+                document.getElementById('unsafe-sources').textContent = unsafeCount;
+                document.getElementById('total-tests').textContent = totalTests;
+                
+                loadSourceDropdown();
+                loadRecentTests();
+                loadWaterSourcesList();
+                loadPendingTasks();
+                initQualityChart();
+                
+            } catch (error) {
+                showAlert('Error loading data', 'danger');
+            }
+        }
+        
+        function loadSourceDropdown() {
+            const select = document.getElementById('test-source');
+            select.innerHTML = '<option value="">Select water source</option>' +
+                waterSources.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+        }
+        
+        function loadRecentTests() {
+            const sortedTests = [...allTests].sort((a, b) => new Date(b.test_date) - new Date(a.test_date));
+            const html = sortedTests.slice(0, 10).map(test => {
+                const isSafe = !test.coliform_present && test.turbidity !== 'High';
+                return `<tr>
+                    <td>${formatDate(test.test_date)}</td>
+                    <td><strong>${escapeHtml(test.source_name)}</strong></td>
+                    <td>${test.ph_level || 'N/A'}</td>
+                    <td>${test.turbidity || 'N/A'}</td>
+                    <td>${test.coliform_present ? '⚠️ Present' : '✓ Absent'}</td>
+                    <td class="${isSafe ? 'test-status-pass' : 'test-status-fail'}">${isSafe ? 'PASS' : 'FAIL'}</td>
+                    <td>${escapeHtml(test.tested_by)}</td>
+                </tr>`;
+            }).join('');
+            document.getElementById('recent-tests-body').innerHTML = html || '<tr><td colspan="7">No test results</td></tr>';
+        }
+        
+        function loadWaterSourcesList() {
+            const html = waterSources.map(source => `
+                <div class="source-card">
+                    <div style="display: flex; justify-content: space-between;">
+                        <div><h4>${escapeHtml(source.name)}</h4><p>${source.source_type} | ${escapeHtml(source.location_desc)}</p></div>
+                        <div><button onclick="viewSource(${source.id})" class="btn btn-sm btn-primary">View</button></div>
+                    </div>
+                    <small>Last tested: ${formatDate(source.last_test_date)} | Status: ${getStatusText(source.safety_status)}</small>
+                </div>
+            `).join('');
+            document.getElementById('water-sources-list').innerHTML = html;
+        }
+        
+        function loadPendingTasks() {
+            const pendingReports = mockAPI.communityReports.filter(r => r.status === 'pending').length;
+            const needingTest = waterSources.filter(s => (new Date() - new Date(s.last_test_date)) / (1000*60*60*24) > 90).length;
+            document.getElementById('pending-tasks').innerHTML = `
+                <div>📋 Pending reports: ${pendingReports} ${pendingReports > 0 ? '<button onclick="location.href=\'../admin/reports.html\'" class="btn btn-sm btn-primary">Review</button>' : ''}</div>
+                <div>🔬 Sources needing test: ${needingTest}</div>
+            `;
+        }
+        
+        function initQualityChart() {
+            const ctx = document.getElementById('quality-trend-chart').getContext('2d');
+            const months = ['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'];
+            const safe = [3, 4, 4, 5, 5, waterSources.filter(s => s.safety_status === 'safe').length];
+            const unsafe = [2, 2, 1, 1, 1, waterSources.filter(s => s.safety_status === 'unsafe').length];
+            if (qualityChart) qualityChart.destroy();
+            qualityChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: months, datasets: [
+                    { label: 'Safe', data: safe, borderColor: '#4caf50', fill: true },
+                    { label: 'Unsafe', data: unsafe, borderColor: '#f44336', fill: true }
+                ]},
+                options: { responsive: true }
+            });
+        }
+        
+        function showAddSourceModal() { document.getElementById('add-source-modal').classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function viewSource(id) { window.location.href = `../water-source.html?id=${id}`; }
+        
+        document.getElementById('test-result-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const result = await API.post('/tests', {
+                source_id: document.getElementById('test-source').value,
+                test_date: document.getElementById('test-date').value,
+                ph_level: document.getElementById('test-ph').value,
+                turbidity: document.getElementById('test-turbidity').value,
+                coliform_present: document.getElementById('test-coliform').checked,
+                tested_by: document.getElementById('test-tested-by').value,
+                notes: document.getElementById('test-notes').value
+            });
+            if (result.success) { showAlert('Test added!', 'success'); loadData(); e.target.reset(); }
+            else showAlert('Error', 'danger');
+        });
+        
+        document.getElementById('add-source-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const result = await API.post('/sources', {
+                name: document.getElementById('source-name').value,
+                location_desc: document.getElementById('source-location').value,
+                source_type: document.getElementById('source-type').value,
+                latitude: parseFloat(document.getElementById('source-lat').value),
+                longitude: parseFloat(document.getElementById('source-lng').value)
+            });
+            if (result.success) { showAlert('Source added!', 'success'); closeModal('add-source-modal'); loadData(); }
+            else showAlert('Error', 'danger');
+        });
+        
+        document.addEventListener('DOMContentLoaded', loadData);
+        window.showAddSourceModal = showAddSourceModal;
+        window.closeModal = closeModal;
+        window.viewSource = viewSource;
+    </script>
+</body>
+</html>

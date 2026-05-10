@@ -1,0 +1,214 @@
+<!-- pages/gov-dashboard.html - Government Official Dashboard -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Government Dashboard - SSVIAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>👮 Government Dashboard</span>
+            <span id="current-time"></span>
+        </div>
+        
+        <div class="header gov-card">
+            <h1>👮 Law Enforcement Portal</h1>
+            <p id="agency-name">Cameroon Police Force</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <!-- Stats Cards -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <div class="card" style="text-align: center; padding: 15px;">
+                    <div style="font-size: 32px;">🚗</div>
+                    <div id="stolen-count" style="font-size: 24px; font-weight: bold;">0</div>
+                    <div>Stolen Vehicles</div>
+                </div>
+                <div class="card" style="text-align: center; padding: 15px;">
+                    <div style="font-size: 32px;">👁️</div>
+                    <div id="sighting-count" style="font-size: 24px; font-weight: bold;">0</div>
+                    <div>Active Sightings</div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="card">
+                <div class="card-title">Quick Actions</div>
+                <button class="btn btn-primary" onclick="window.location.href='verify-vehicle.html'">🔍 Verify Vehicle</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="window.location.href='scan-plate.html'">📷 Scan License Plate</button>
+                <button class="btn btn-danger" style="margin-top: 10px;" onclick="window.location.href='report-sighting.html'">🚨 Report Sighting</button>
+            </div>
+            
+            <!-- Recent Theft Reports -->
+            <div class="card">
+                <div class="card-title">🚨 Recent Theft Reports</div>
+                <div id="theft-reports-list">
+                    <div class="alert alert-info">Loading reports...</div>
+                </div>
+            </div>
+            
+            <!-- Recent Sightings -->
+            <div class="card">
+                <div class="card-title">👁️ Citizen Sightings</div>
+                <div id="sightings-list">
+                    <div class="alert alert-info">Loading sightings...</div>
+                </div>
+            </div>
+            
+            <!-- Verification History -->
+            <div class="card">
+                <div class="card-title">📋 Recent Verifications</div>
+                <div id="verification-history">
+                    <div class="alert alert-info">No recent verifications</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="gov-dashboard.html" class="nav-item active">🏠 Dashboard</a>
+            <a href="verify-vehicle.html" class="nav-item">🔍 Verify</a>
+            <a href="scan-plate.html" class="nav-item">📷 Scan</a>
+            <a href="#" class="nav-item" onclick="logout()">🚪 Logout</a>
+        </div>
+    </div>
+    
+    <script>
+        let govUser = null;
+        
+        // Load dashboard data
+        async function loadGovDashboard() {
+            // Check authentication
+            const user = localStorage.getItem('user');
+            if (!user || !JSON.parse(user).isGovernment) {
+                window.location.href = 'gov-login.html';
+                return;
+            }
+            
+            govUser = JSON.parse(user);
+            document.getElementById('agency-name').textContent = govUser.agency || 'Government Official';
+            document.getElementById('agency-name').innerHTML += `<br><small>Region: ${govUser.region}</small>`;
+            
+            // Update time
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // Load data
+            await loadTheftReports();
+            await loadSightings();
+            await loadVerificationHistory();
+            await loadStats();
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString('en-CM');
+        }
+        
+        async function loadStats() {
+            const result = await API.getStolenVehicles();
+            if (result.success && result.data) {
+                document.getElementById('stolen-count').textContent = result.data.length;
+            }
+            
+            const sightings = await API.request('get-sightings.php');
+            if (sightings.success && sightings.data) {
+                document.getElementById('sighting-count').textContent = sightings.data.length;
+            }
+        }
+        
+        async function loadTheftReports() {
+            const result = await API.request('get-theft-reports.php');
+            const container = document.getElementById('theft-reports-list');
+            
+            if (result.success && result.data && result.data.length > 0) {
+                container.innerHTML = result.data.map(report => `
+                    <div class="alert alert-danger" style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <strong>🚗 ${report.plate_number}</strong>
+                            <span class="badge badge-warning">${report.status}</span>
+                        </div>
+                        <div><small>${report.make} ${report.model} (${report.year})</small></div>
+                        <div><small>📍 Last seen: ${report.last_location || 'Unknown'}</small></div>
+                        <div><small>📅 Reported: ${formatDate(report.report_date)}</small></div>
+                        <div style="margin-top: 8px;">
+                            <button class="btn btn-success" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="markAsResolved(${report.id})">✓ Mark Resolved</button>
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="viewDetails(${report.vehicle_id})">View Details</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="alert alert-success">No theft reports pending</div>';
+            }
+        }
+        
+        async function loadSightings() {
+            const result = await API.request('get-sightings.php');
+            const container = document.getElementById('sightings-list');
+            
+            if (result.success && result.data && result.data.length > 0) {
+                container.innerHTML = result.data.map(sighting => `
+                    <div class="alert alert-info" style="margin-bottom: 10px;">
+                        <div><strong>🚗 Vehicle: ${sighting.plate_number}</strong></div>
+                        <div>📍 Location: ${sighting.location}</div>
+                        <div>👤 Reported by: ${sighting.reporter_name || 'Citizen'}</div>
+                        <div>📅 Time: ${formatDate(sighting.sighting_date)}</div>
+                        <div style="margin-top: 8px;">
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="dispatchAlert('${sighting.plate_number}', '${sighting.location}')">🚨 Dispatch Alert</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="alert alert-success">No recent sightings</div>';
+            }
+        }
+        
+        function loadVerificationHistory() {
+            const history = JSON.parse(localStorage.getItem('verificationHistory') || '[]');
+            const container = document.getElementById('verification-history');
+            
+            if (history.length > 0) {
+                container.innerHTML = history.slice(0,5).map(item => `
+                    <div class="alert alert-${item.status === 'stolen' ? 'danger' : 'success'}" style="margin-bottom: 8px;">
+                        <strong>${item.plate}</strong> - ${item.status.toUpperCase()}
+                        <small>(${formatDate(item.timestamp)})</small>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="alert alert-info">No verification history</div>';
+            }
+        }
+        
+        async function markAsResolved(reportId) {
+            if (confirm('Mark this theft report as resolved?')) {
+                const result = await API.request('resolve-report.php', 'POST', { report_id: reportId });
+                if (result.success) {
+                    showAlert('Report marked as resolved', 'success');
+                    loadTheftReports();
+                    loadStats();
+                }
+            }
+        }
+        
+        function dispatchAlert(plate, location) {
+            showAlert(`Alert dispatched to officers in ${location} for vehicle ${plate}`, 'success');
+            // In production, this would send real notifications
+        }
+        
+        function viewDetails(vehicleId) {
+            localStorage.setItem('viewVehicleId', vehicleId);
+            window.location.href = 'vehicle-details.html';
+        }
+        
+        // Initialize
+        loadGovDashboard();
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

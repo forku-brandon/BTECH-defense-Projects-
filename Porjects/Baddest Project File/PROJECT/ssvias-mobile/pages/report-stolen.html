@@ -1,0 +1,148 @@
+<!-- pages/report-stolen.html - Report Stolen Vehicle -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Report Stolen Vehicle - SSVIAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>⚠️ Report Stolen</span>
+            <span>Emergency</span>
+        </div>
+        
+        <div class="header" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+            <h1>⚠️ Report Stolen Vehicle</h1>
+            <p>Immediate action required</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <div class="card">
+                <div class="card-title">Theft Information</div>
+                <form id="stolen-report-form">
+                    <div class="form-group">
+                        <label>🚗 License Plate Number *</label>
+                        <input type="text" id="plate-number" placeholder="AB123CD" required>
+                        <button type="button" class="btn btn-secondary" style="margin-top: 5px;" onclick="openCamera((plate) => {
+                            document.getElementById('plate-number').value = plate;
+                        })">📷 Scan Plate</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📍 Last Known Location *</label>
+                        <input type="text" id="last-location" placeholder="Where was the vehicle last seen?" required>
+                        <button type="button" class="btn btn-secondary" style="margin-top: 5px;" onclick="getCurrentLocationForReport()">📍 Use Current Location</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📅 Date & Time of Theft *</label>
+                        <input type="datetime-local" id="theft-date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📝 Description of Incident</label>
+                        <textarea id="description" rows="4" placeholder="Describe what happened..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>👮 Police Report Number (if filed)</label>
+                        <input type="text" id="police-report" placeholder="Optional">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>📸 Upload Evidence (Photos/Videos)</label>
+                        <input type="file" id="evidence" accept="image/*,video/*" multiple>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <strong>⚠️ IMPORTANT:</strong><br>
+                        • File a police report immediately<br>
+                        • Save all evidence<br>
+                        • Do not confront suspects<br>
+                        • Call 117 or 1500 for emergencies
+                    </div>
+                    
+                    <button type="submit" class="btn btn-danger">🚨 Submit Theft Report</button>
+                </form>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="user-dashboard.html" class="nav-item">🏠 Home</a>
+            <a href="verify-vehicle.html" class="nav-item">🔍 Verify</a>
+            <a href="report-sighting.html" class="nav-item">👁️ Sighting</a>
+        </div>
+    </div>
+    
+    <!-- Camera Modal -->
+    <div id="camera-modal" class="camera-modal">
+        <div class="camera-container">
+            <video id="camera-feed" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button id="capture-btn" class="camera-btn">📸</button>
+            </div>
+            <button id="close-camera" class="close-camera">✕ Close</button>
+        </div>
+    </div>
+    
+    <script>
+        async function getCurrentLocationForReport() {
+            try {
+                const position = await getCurrentLocation();
+                const location = await getLocationAddress(position.lat, position.lng);
+                document.getElementById('last-location').value = location;
+                showAlert('Location captured!', 'success');
+            } catch (error) {
+                showAlert('Unable to get location. Please enter manually.', 'danger');
+            }
+        }
+        
+        document.getElementById('stolen-report-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const user = localStorage.getItem('user');
+            if (!user) {
+                showAlert('Please login to report a stolen vehicle', 'danger');
+                setTimeout(() => window.location.href = 'login.html', 2000);
+                return;
+            }
+            
+            const reportData = {
+                plate_number: document.getElementById('plate-number').value.toUpperCase(),
+                last_location: document.getElementById('last-location').value,
+                theft_date: document.getElementById('theft-date').value,
+                description: document.getElementById('description').value,
+                police_report: document.getElementById('police-report').value,
+                reported_by: JSON.parse(user).id
+            };
+            
+            if (!reportData.plate_number || !reportData.last_location || !reportData.theft_date) {
+                showAlert('Please fill in all required fields', 'danger');
+                return;
+            }
+            
+            showAlert('Submitting theft report...', 'info');
+            const result = await API.reportStolen(reportData);
+            
+            if (result.success) {
+                showAlert('Theft report submitted! Police have been notified.', 'success');
+                setTimeout(() => {
+                    window.location.href = 'user-dashboard.html';
+                }, 3000);
+            } else {
+                showAlert('Failed to submit report. Please try again.', 'danger');
+            }
+        });
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ocr.js"></script>
+    <script src="../js/camera.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

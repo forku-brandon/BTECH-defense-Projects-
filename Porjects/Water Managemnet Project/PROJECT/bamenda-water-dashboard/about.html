@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Bamenda Water & Health Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .about-hero {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            color: white;
+            padding: 4rem 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .about-hero h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .about-hero p {
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+            opacity: 0.9;
+        }
+        .mission-section {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        .mission-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .value-card {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+        .value-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        .value-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 1rem;
+        }
+        .team-member {
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            text-align: center;
+            transition: var(--transition);
+            box-shadow: var(--shadow);
+        }
+        .team-member:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+        .member-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 1.5rem auto 1rem;
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: white;
+        }
+        .member-name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+        .member-role {
+            color: var(--primary-green);
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+        .member-bio {
+            padding: 0 1rem 1rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+        .stats-section {
+            background: linear-gradient(135deg, #e8f5e9, #c8e6c9);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+        .stats-grid-about {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-green);
+        }
+        .partners-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+        .partner-logo {
+            background: var(--bg-white);
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+        .partner-logo:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+        .partner-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+            margin: 2rem 0;
+        }
+        .timeline-item {
+            display: flex;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .timeline-year {
+            min-width: 100px;
+            font-weight: bold;
+            font-size: 1.25rem;
+            color: var(--primary-green);
+        }
+        .timeline-content {
+            background: var(--bg-white);
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+            flex: 1;
+        }
+        @media (max-width: 768px) {
+            .about-hero h1 { font-size: 1.75rem; }
+            .timeline-item { flex-direction: column; }
+            .timeline-year { margin-bottom: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="report-form.html">Report Issue</a></li>
+                <li><a href="about.html" class="active">About</a></li>
+            </ul>
+            <div class="nav-right">
+                <div class="auth-buttons" id="auth-buttons">
+                    <a href="login.html" class="btn-nav btn-nav-login">Login</a>
+                    <a href="register.html" class="btn-nav btn-nav-register">Sign Up</a>
+                </div>
+                <div class="user-menu-container" id="user-menu-container" style="display: none;"></div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Hero Section -->
+    <div class="about-hero">
+        <h1>About the Bamenda Water & Health Dashboard</h1>
+        <p>Empowering communities with real-time water quality information for better health outcomes</p>
+    </div>
+    
+    <main class="container">
+        <!-- Mission Section -->
+        <div class="mission-section">
+            <div class="mission-icon">🎯</div>
+            <h2>Our Mission</h2>
+            <p style="font-size: 1.1rem; max-width: 800px; margin: 0 auto;">To provide accessible, real-time water quality information to the Mankon community, enabling informed decisions about water safety and fostering collaboration between residents, health workers, and water authorities.</p>
+        </div>
+        
+        <!-- Core Values -->
+        <h2 style="text-align: center; margin-bottom: 1.5rem;">Our Core Values</h2>
+        <div class="values-grid">
+            <div class="value-card">
+                <div class="value-icon">🤝</div>
+                <h3>Community First</h3>
+                <p>We believe that communities should have access to information that affects their health and well-being.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">🔬</div>
+                <h3>Data Transparency</h3>
+                <p>All water quality data is presented honestly, clearly distinguishing between official tests and community reports.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">🌍</div>
+                <h3>Sustainability</h3>
+                <p>Built with open-source technology that can be maintained and expanded by the community.</p>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">📱</div>
+                <h3>Accessibility</h3>
+                <p>Designed for mobile devices and slow internet connections to reach everyone in the community.</p>
+            </div>
+        </div>
+        
+        <!-- The Problem We're Solving -->
+        <div class="card">
+            <h2>💧 The Challenge We're Addressing</h2>
+            <div class="row" style="margin-top: 1.5rem;">
+                <div class="col">
+                    <h3>Before Our Platform</h3>
+                    <ul style="margin-top: 0.5rem; line-height: 1.8;">
+                        <li>❌ Water quality data trapped in paper records and PDF reports</li>
+                        <li>❌ No way for residents to know if their local water source is safe</li>
+                        <li>❌ No channel for community members to report water issues</li>
+                        <li>❌ Disconnect between water quality and health outcomes</li>
+                        <li>❌ Delayed response to contamination events</li>
+                    </ul>
+                </div>
+                <div class="col">
+                    <h3>After Our Platform</h3>
+                    <ul style="margin-top: 0.5rem; line-height: 1.8;">
+                        <li>✅ Real-time water quality data on an interactive map</li>
+                        <li>✅ Color-coded safety status for every water source</li>
+                        <li>✅ Community reporting system for water issues</li>
+                        <li>✅ Integration with health data to show connections</li>
+                        <li>✅ Faster response to water quality problems</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Impact Statistics -->
+        <div class="stats-section">
+            <h2>Our Impact So Far</h2>
+            <div class="stats-grid-about">
+                <div>
+                    <div class="stat-number" id="stat-sources">6+</div>
+                    <div>Water Sources Mapped</div>
+                </div>
+                <div>
+                    <div class="stat-number" id="stat-tests">8+</div>
+                    <div>Official Tests Conducted</div>
+                </div>
+                <div>
+                    <div class="stat-number" id="stat-reports">5+</div>
+                    <div>Community Reports</div>
+                </div>
+                <div>
+                    <div class="stat-number" id="stat-users">100+</div>
+                    <div>Community Members Reached</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Project Timeline -->
+        <div class="card">
+            <h2>📅 Project Timeline</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-year">January 2024</div>
+                    <div class="timeline-content">
+                        <h3>Project Initiation</h3>
+                        <p>Needs assessment and community consultations in Mankon neighborhood. Identification of 6 key water sources.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">February 2024</div>
+                    <div class="timeline-content">
+                        <h3>Data Collection & Mapping</h3>
+                        <p>GPS coordinates collected for all water sources. Historical test data digitized from MINEE records.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">March 2024</div>
+                    <div class="timeline-content">
+                        <h3>Platform Development</h3>
+                        <p>Dashboard built and tested with community feedback. Mobile-optimized interface launched.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">April 2024</div>
+                    <div class="timeline-content">
+                        <h3>Community Launch</h3>
+                        <p>Public launch with training for health workers and water officers. Ongoing community engagement.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-year">2025+</div>
+                    <div class="timeline-content">
+                        <h3>Expansion Phase</h3>
+                        <p>Expanding to other neighborhoods in Bamenda. Integration with national water quality database.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Team Section -->
+        <h2 style="text-align: center; margin-bottom: 1.5rem;">Meet the Team</h2>
+        <div class="team-grid">
+            <div class="team-member">
+                <div class="member-avatar">👨‍💻</div>
+                <div class="member-name">John Mbenda</div>
+                <div class="member-role">Project Lead & Developer</div>
+                <div class="member-bio">Software engineer with 8+ years experience building community-focused applications. Passionate about using technology for social good.</div>
+            </div>
+            <div class="team-member">
+                <div class="member-avatar">👩‍⚕️</div>
+                <div class="member-name">Dr. Sarah Nformi</div>
+                <div class="member-role">Public Health Advisor</div>
+                <div class="member-bio">Public health specialist with expertise in waterborne diseases and community health interventions in the Northwest Region.</div>
+            </div>
+            <div class="team-member">
+                <div class="member-avatar">💧</div>
+                <div class="member-name">Paul Tanyu</div>
+                <div class="member-role">Water Quality Expert</div>
+                <div class="member-bio">Water engineer from MINEE with extensive knowledge of water sources and testing protocols in Bamenda.</div>
+            </div>
+            <div class="team-member">
+                <div class="member-avatar">👥</div>
+                <div class="member-name">Mankon Community</div>
+                <div class="member-role">Community Partners</div>
+                <div class="member-bio">The residents of Mankon who contribute reports and help keep the community informed about water quality issues.</div>
+            </div>
+        </div>
+        
+        <!-- Partners Section -->
+        <div class="card">
+            <h2>🤝 Our Partners</h2>
+            <div class="partners-grid">
+                <div class="partner-logo">
+                    <div class="partner-icon">🏛️</div>
+                    <h4>MINEE</h4>
+                    <p>Ministry of Water & Energy</p>
+                </div>
+                <div class="partner-logo">
+                    <div class="partner-icon">🏥</div>
+                    <h4>Mankon Health Center</h4>
+                    <p>Health Data Partner</p>
+                </div>
+                <div class="partner-logo">
+                    <div class="partner-icon">🌍</div>
+                    <h4>OpenStreetMap</h4>
+                    <p>Mapping Infrastructure</p>
+                </div>
+                <div class="partner-logo">
+                    <div class="partner-icon">💧</div>
+                    <h4>WaterAid Cameroon</h4>
+                    <p>Technical Support</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- FAQ Section -->
+        <div class="card">
+            <h2>❓ Frequently Asked Questions</h2>
+            <div style="margin-top: 1rem;">
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>How accurate is the water quality data?</h3>
+                    <p>Official test results come from MINEE and partner NGOs. Community reports are moderated before publication. We clearly distinguish between official data and community observations.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>Can I submit a report anonymously?</h3>
+                    <p>Yes! You can submit reports without providing your name. Your report will still help the community.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>How often is the data updated?</h3>
+                    <p>Official test results are updated as they become available. Community reports are reviewed within 24-48 hours.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>Is this available for other neighborhoods?</h3>
+                    <p>Currently focused on Mankon as a pilot. We plan to expand to other neighborhoods in Bamenda based on success and funding.</p>
+                </div>
+                <div style="margin-bottom: 1.5rem;">
+                    <h3>How can I get involved?</h3>
+                    <p>Register for an account to submit reports, share the dashboard with neighbors, or contact us about partnership opportunities.</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Contact Section -->
+        <div class="card" style="text-align: center; background: linear-gradient(135deg, #e8f5e9, #c8e6c9);">
+            <h2>📧 Get In Touch</h2>
+            <p>Have questions, feedback, or want to partner with us? We'd love to hear from you!</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
+                <a href="mailto:info@bamendawater.org" class="btn btn-primary">✉️ Email Us</a>
+                <a href="report-form.html" class="btn btn-secondary">📢 Report an Issue</a>
+                <a href="register.html" class="btn btn-secondary">👥 Join Community</a>
+            </div>
+            <p style="margin-top: 1.5rem;">
+                <strong>📍 Location:</strong> Mankon, Bamenda, Cameroon<br>
+                <strong>📞 Phone:</strong> +237 XXX XXX XXX<br>
+                <strong>✉️ Email:</strong> info@bamendawater.org
+            </p>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="container">
+            <p style="text-align: center;">⚠️ <strong>Disclaimer:</strong> Information is for guidance only. Always consult official water testing authorities for health decisions.</p>
+            <p style="text-align: center;">&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+        </div>
+    </footer>
+    
+    <script src="js/main.js"></script>
+    <script src="js/mock-api.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // Update stats with real data
+        async function updateStats() {
+            try {
+                const sources = await API.get('/sources');
+                const reports = await API.get('/reports');
+                const tests = await API.get('/tests');
+                
+                if (sources.success) {
+                    document.getElementById('stat-sources').textContent = sources.data.length + '+';
+                }
+                
+                if (reports.success) {
+                    document.getElementById('stat-reports').textContent = reports.data.filter(r => r.status === 'approved').length + '+';
+                }
+                
+                // Count total tests
+                let totalTests = 0;
+                if (sources.success && sources.data) {
+                    for (const source of sources.data) {
+                        const sourceTests = await API.get('/tests', { source_id: source.id });
+                        if (sourceTests.success) {
+                            totalTests += sourceTests.data.length;
+                        }
+                    }
+                }
+                document.getElementById('stat-tests').textContent = totalTests + '+';
+                
+            } catch (error) {
+                console.error('Error updating stats:', error);
+            }
+        }
+        
+        // Check auth on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuth();
+            updateStats();
+        });
+    </script>
+</body>
+</html>

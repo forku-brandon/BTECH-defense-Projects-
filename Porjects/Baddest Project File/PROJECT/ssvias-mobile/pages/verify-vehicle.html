@@ -1,0 +1,165 @@
+<!-- pages/verify-vehicle.html - Vehicle Verification Page -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Verify Vehicle - SSVIAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>🔍 Verify Vehicle</span>
+            <span>Check Status</span>
+        </div>
+        
+        <div class="header">
+            <h1>🔍 Vehicle Verification</h1>
+            <p>Check if a vehicle is stolen</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <div class="card">
+                <div class="card-title">Search by Plate Number</div>
+                <div class="form-group">
+                    <input type="text" id="plate-search" placeholder="Enter plate number (e.g., AB123CD)" maxlength="8">
+                </div>
+                <button class="btn btn-primary" onclick="verifyByPlate()">Verify Now</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="openCameraForVerify()">📷 Scan with Camera</button>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Search by VIN</div>
+                <div class="form-group">
+                    <input type="text" id="vin-search" placeholder="Enter VIN number">
+                </div>
+                <button class="btn btn-primary" onclick="verifyByVIN()">Search by VIN</button>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Recent Verifications</div>
+                <div id="recent-verifications">
+                    <div class="alert alert-info">No recent verifications</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">About Verification</div>
+                <p>Our system checks:</p>
+                <ul style="padding-left: 20px;">
+                    <li>✓ National stolen vehicle database</li>
+                    <li>✓ Active theft reports</li>
+                    <li>✓ Police records</li>
+                    <li>✓ Insurance claims</li>
+                </ul>
+                <div class="alert alert-info">
+                    <strong>Note:</strong> Results are updated in real-time from official sources.
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="../index.html" class="nav-item">🏠 Home</a>
+            <a href="verify-vehicle.html" class="nav-item active">🔍 Verify</a>
+            <a href="report-sighting.html" class="nav-item">🚨 Report</a>
+            <a href="login.html" class="nav-item">👤 Login</a>
+        </div>
+    </div>
+    
+    <!-- Camera Modal -->
+    <div id="camera-modal" class="camera-modal">
+        <div class="camera-container">
+            <video id="camera-feed" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button id="capture-btn" class="camera-btn">📸</button>
+            </div>
+            <button id="close-camera" class="close-camera">✕ Close</button>
+        </div>
+    </div>
+    
+    <script>
+        async function verifyByPlate() {
+            const plate = document.getElementById('plate-search').value.trim().toUpperCase();
+            if (!plate) {
+                showAlert('Please enter a plate number', 'danger');
+                return;
+            }
+            
+            showAlert('Verifying vehicle...', 'info');
+            const result = await API.verifyVehicle(plate);
+            
+            if (result.success && result.vehicle) {
+                localStorage.setItem('lastVerification', JSON.stringify(result.vehicle));
+                saveToHistory(result.vehicle);
+                window.location.href = 'vehicle-status.html';
+            } else {
+                showAlert('Vehicle not found in database', 'danger');
+            }
+        }
+        
+        async function verifyByVIN() {
+            const vin = document.getElementById('vin-search').value.trim().toUpperCase();
+            if (!vin) {
+                showAlert('Please enter a VIN number', 'danger');
+                return;
+            }
+            
+            showAlert('Searching by VIN...', 'info');
+            const result = await API.request('verify-by-vin.php', 'POST', { vin: vin });
+            
+            if (result.success && result.vehicle) {
+                localStorage.setItem('lastVerification', JSON.stringify(result.vehicle));
+                saveToHistory(result.vehicle);
+                window.location.href = 'vehicle-status.html';
+            } else {
+                showAlert('No vehicle found with that VIN', 'danger');
+            }
+        }
+        
+        function openCameraForVerify() {
+            openCamera(async (plate) => {
+                document.getElementById('plate-search').value = plate;
+                await verifyByPlate();
+            });
+        }
+        
+        function saveToHistory(vehicle) {
+            let history = JSON.parse(localStorage.getItem('recentVerifications') || '[]');
+            history.unshift({
+                plate: vehicle.plate || vehicle.plate_number,
+                status: vehicle.status,
+                timestamp: new Date().toISOString()
+            });
+            history = history.slice(0, 10);
+            localStorage.setItem('recentVerifications', JSON.stringify(history));
+            loadRecentVerifications();
+        }
+        
+        function loadRecentVerifications() {
+            const history = JSON.parse(localStorage.getItem('recentVerifications') || '[]');
+            const container = document.getElementById('recent-verifications');
+            
+            if (history.length > 0) {
+                container.innerHTML = history.map(item => `
+                    <div class="alert alert-${item.status === 'stolen' ? 'danger' : 'success'}" style="margin-bottom: 8px;">
+                        <strong>${item.plate}</strong> - ${item.status.toUpperCase()}
+                        <small>(${formatDate(item.timestamp)})</small>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="alert alert-info">No recent verifications</div>';
+            }
+        }
+        
+        loadRecentVerifications();
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ocr.js"></script>
+    <script src="../js/camera.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

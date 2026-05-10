@@ -1,0 +1,120 @@
+<!-- pages/vehicle-status.html - Vehicle Status Result Page -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Vehicle Status - SSVIAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>🔍 Vehicle Status</span>
+            <span>SSVIAS Cameroon</span>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <div id="status-content">
+                <!-- Dynamic content loaded via JavaScript -->
+            </div>
+            
+            <div class="card">
+                <button class="btn btn-primary" onclick="window.location.href='verify-vehicle.html'">Verify Another Vehicle</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="window.location.href='scan-plate.html'">📷 Scan Another Plate</button>
+                <button class="btn btn-danger" style="margin-top: 10px;" onclick="reportSighting()">🚨 Report Sighting</button>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="../index.html" class="nav-item">🏠 Home</a>
+            <a href="verify-vehicle.html" class="nav-item">🔍 Verify</a>
+            <a href="report-sighting.html" class="nav-item">🚨 Report</a>
+            <a href="login.html" class="nav-item">👤 Account</a>
+        </div>
+    </div>
+    
+    <script>
+        let vehicleData = null;
+        
+        async function loadVehicleStatus() {
+            const storedVehicle = localStorage.getItem('lastVerification');
+            if (!storedVehicle) {
+                window.location.href = 'verify-vehicle.html';
+                return;
+            }
+            
+            vehicleData = JSON.parse(storedVehicle);
+            displayVehicleStatus();
+            
+            // Save to verification history
+            const history = JSON.parse(localStorage.getItem('verificationHistory') || '[]');
+            history.unshift({
+                plate: vehicleData.plate,
+                status: vehicleData.status,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('verificationHistory', JSON.stringify(history.slice(0, 20)));
+        }
+        
+        function displayVehicleStatus() {
+            const isStolen = vehicleData.status === 'stolen';
+            const container = document.getElementById('status-content');
+            
+            container.innerHTML = `
+                <div class="result-card" style="background: ${isStolen ? 'linear-gradient(135deg, #e74c3c, #c0392b)' : 'linear-gradient(135deg, #27ae60, #229954)'}">
+                    <div class="result-status">${isStolen ? '⚠️ STOLEN VEHICLE' : '✅ SAFE VEHICLE'}</div>
+                    <div style="font-size: 36px; font-weight: bold; margin: 20px 0;">${vehicleData.plate || vehicleData.plate_number}</div>
+                    
+                    <div class="vehicle-info">
+                        <div><strong>Make:</strong> ${vehicleData.make || 'N/A'}</div>
+                        <div><strong>Model:</strong> ${vehicleData.model || 'N/A'}</div>
+                        <div><strong>Year:</strong> ${vehicleData.year || 'N/A'}</div>
+                        <div><strong>Color:</strong> ${vehicleData.color || 'N/A'}</div>
+                        <div><strong>VIN:</strong> ${vehicleData.vin || vehicleData.VIN || 'N/A'}</div>
+                        ${vehicleData.owner_name ? `<div><strong>Registered Owner:</strong> ${vehicleData.owner_name}</div>` : ''}
+                        ${isStolen && vehicleData.reported_date ? `
+                            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.3);">
+                                <div><strong>⚠️ THEFT DETAILS:</strong></div>
+                                <div>Reported: ${formatDate(vehicleData.reported_date)}</div>
+                                <div>Last Location: ${vehicleData.last_location || 'Unknown'}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    
+                    ${isStolen ? `
+                        <div style="margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 8px;">
+                            <strong>🚨 IMMEDIATE ACTION REQUIRED:</strong><br>
+                            • Do not approach the vehicle<br>
+                            • Contact authorities immediately<br>
+                            • Call: 117 (Police) or 1500 (Gendarmerie)<br>
+                            • Note the vehicle's location and direction
+                        </div>
+                    ` : `
+                        <div style="margin-top: 20px; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 8px;">
+                            <strong>✅ This vehicle is clear:</strong><br>
+                            No theft report has been filed for this vehicle.<br>
+                            If you suspect any criminal activity, please contact authorities.
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+        
+        function reportSighting() {
+            if (vehicleData && vehicleData.status === 'stolen') {
+                localStorage.setItem('reportVehiclePlate', vehicleData.plate || vehicleData.plate_number);
+                window.location.href = 'report-sighting.html';
+            } else {
+                showAlert('You can only report sightings for stolen vehicles', 'warning');
+            }
+        }
+        
+        loadVehicleStatus();
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

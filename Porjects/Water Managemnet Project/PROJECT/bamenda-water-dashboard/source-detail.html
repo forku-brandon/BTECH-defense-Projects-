@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Source Details - Bamenda Water & Health Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="report-form.html">Report an Issue</a></li>
+                <li><a href="admin/login.html">Admin</a></li>
+            </ul>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <a href="index.html" class="btn btn-secondary" style="margin-bottom: 1rem;">← Back to Home</a>
+        
+        <div id="source-details">
+            <div class="alert alert-info">Loading water source details...</div>
+        </div>
+        
+        <!-- Report Button -->
+        <div style="text-align: center; margin: 2rem 0;">
+            <a href="report-form.html" class="btn btn-primary">📢 Report an Issue with This Water Source</a>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>⚠️ <strong>Disclaimer:</strong> Information is for guidance only. Always consult official water testing authorities for health decisions.</p>
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="js/main.js"></script>
+    <script>
+        // Get source ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sourceId = urlParams.get('id');
+        
+        async function loadSourceDetails() {
+            if (!sourceId) {
+                document.getElementById('source-details').innerHTML = '<div class="alert alert-danger">No water source specified.</div>';
+                return;
+            }
+            
+            try {
+                const source = await API.getWaterSource(sourceId);
+                const tests = await API.getTests(sourceId);
+                const reports = await API.getReports(sourceId);
+                
+                const statusText = getStatusText(source.safety_status);
+                const statusClass = `status-${source.safety_status}`;
+                
+                const html = `
+                    <div class="card">
+                        <div class="card-header">
+                            <h1>${escapeHtml(source.name)}</h1>
+                            <span class="status-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col">
+                                <h3>📍 Location Information</h3>
+                                <p><strong>Type:</strong> ${source.source_type}</p>
+                                <p><strong>Area:</strong> ${escapeHtml(source.location_desc)}</p>
+                                <p><strong>Last Tested:</strong> ${formatDate(source.last_test_date)}</p>
+                                ${source.photo_url ? `<img src="${source.photo_url}" alt="${source.name}" style="max-width: 100%; border-radius: 8px; margin-top: 1rem;">` : ''}
+                            </div>
+                            <div class="col">
+                                <h3>📊 Safety Score</h3>
+                                <div class="alert ${source.safety_status === 'safe' ? 'alert-success' : source.safety_status === 'caution' ? 'alert-warning' : 'alert-danger'}">
+                                    <strong>Current Status: ${statusText}</strong>
+                                    <p>Based on most recent official test results and community reports.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <h3>🔬 Official Test Results</h3>
+                        ${tests.length > 0 ? `
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>pH Level</th>
+                                            <th>Turbidity</th>
+                                            <th>Coliform</th>
+                                            <th>Tested By</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${tests.map(test => `
+                                            <tr>
+                                                <td>${formatDate(test.date)}</td>
+                                                <td>${test.ph_level || 'N/A'}</td>
+                                                <td>${test.turbidity || 'N/A'}</td>
+                                                <td>${test.coliform_present ? 'Present ⚠️' : 'Absent ✓'}</td>
+                                                <td>${escapeHtml(test.tested_by)}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ` : '<p>No official test results available yet.</p>'}
+                    </div>
+                    
+                    <div class="card">
+                        <h3>👥 Community Reports</h3>
+                        ${reports.length > 0 ? reports.map(report => `
+                            <div class="report-item">
+                                <div class="report-date">${formatDate(report.date)}</div>
+                                <span class="report-type ${report.observation_type}">${getObservationTypeText(report.observation_type)}</span>
+                                <p>${escapeHtml(report.description)}</p>
+                                <small>Reported by: ${escapeHtml(report.reporter_name || 'Anonymous')}</small>
+                            </div>
+                        `).join('') : '<p>No community reports yet. <a href="report-form.html">Be the first to report</a>!</p>'}
+                    </div>
+                `;
+                
+                document.getElementById('source-details').innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error loading source details:', error);
+                document.getElementById('source-details').innerHTML = '<div class="alert alert-danger">Error loading water source details. Please try again later.</div>';
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadSourceDetails);
+    </script>
+</body>
+</html>

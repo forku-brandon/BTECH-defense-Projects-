@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Bamenda Water & Health Dashboard</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        .hero {
+            background: linear-gradient(135deg, #2e7d32, #1b5e20);
+            color: white;
+            padding: 3rem 1rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .hero h1 { color: white; margin-bottom: 1rem; font-size: 2.5rem; }
+        .hero p { font-size: 1.1rem; max-width: 600px; margin: 0 auto; opacity: 0.9; }
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 1.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="report-form.html">Report Issue</a></li>
+                <li><a href="about.html">About</a></li>
+            </ul>
+            <div class="nav-right">
+                <div class="auth-buttons" id="auth-buttons">
+                    <a href="login.html" class="btn-nav btn-nav-login">Login</a>
+                    <a href="register.html" class="btn-nav btn-nav-register">Sign Up</a>
+                </div>
+                <div class="user-menu-container" id="user-menu-container" style="display: none;"></div>
+            </div>
+        </div>
+    </nav>
+    
+    <div class="hero">
+        <div class="container">
+            <h1>💧 Know Your Water, Protect Your Health</h1>
+            <p>Real-time water quality information for the Mankon community. Find safe water sources and report issues to help your neighbors.</p>
+        </div>
+    </div>
+    
+    <main class="container">
+        <div class="search-bar">
+            <input type="text" id="search-input" class="search-input" 
+                   placeholder="🔍 Search for water source by name or location...">
+        </div>
+        
+        <div class="map-container">
+            <div id="map"></div>
+            <div class="map-controls">
+                <button class="map-control-btn" onclick="centerOnUser()" title="My Location">📍</button>
+                <button class="map-control-btn" onclick="resetMapView()" title="Reset View">🔄</button>
+                <button id="toggle-health-btn" class="map-control-btn" onclick="toggleHealthLayer()" title="Toggle Health Facilities">🏥</button>
+            </div>
+            <div class="legend">
+                <h4>Water Safety Status</h4>
+                <div class="legend-item"><div class="legend-color safe"></div><span>Safe</span></div>
+                <div class="legend-item"><div class="legend-color caution"></div><span>Caution</span></div>
+                <div class="legend-item"><div class="legend-color unsafe"></div><span>Unsafe</span></div>
+                <div class="legend-item"><div class="legend-color health"></div><span>Health Facility</span></div>
+            </div>
+        </div>
+        
+        <div class="stats-grid" style="margin-bottom: 2rem;">
+            <div class="stat-card"><div class="stat-value" id="total-sources">0</div><div>Water Sources</div></div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #4caf50, #2e7d32);"><div class="stat-value" id="safe-sources">0</div><div>Safe Sources</div></div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #ff9800, #f57c00);"><div class="stat-value" id="active-reports">0</div><div>Active Reports</div></div>
+        </div>
+        
+        <div class="row" style="margin-bottom: 2rem;">
+            <div class="col"><div class="card" style="text-align: center;"><div style="font-size: 2.5rem;">📢</div><h3>Report Water Issue</h3><a href="report-form.html" class="btn btn-primary">Report Now →</a></div></div>
+            <div class="col"><div class="card" style="text-align: center;"><div style="font-size: 2.5rem;">📊</div><h3>View Analytics</h3><a href="dashboard.html" class="btn btn-secondary">View Dashboard →</a></div></div>
+            <div class="col"><div class="card" style="text-align: center;"><div style="font-size: 2.5rem;">👥</div><h3>Join Community</h3><a href="register.html" class="btn btn-secondary">Sign Up Free →</a></div></div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header"><h3>📋 Recent Community Reports</h3><a href="report-form.html" class="btn btn-sm btn-primary">+ Add Report</a></div>
+            <div id="recent-reports" class="report-feed"><p style="text-align: center; padding: 2rem;">Loading reports...</p></div>
+        </div>
+        
+        <div id="cta-section" class="card" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); text-align: center;">
+            <h3>🤝 Join the Water Monitoring Community</h3>
+            <p>Create a free account to track your reports, get notifications, and help protect water sources.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+                <a href="register.html" class="btn btn-primary">Sign Up Now</a>
+                <a href="login.html" class="btn btn-secondary">Login</a>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <div class="container">
+            <p style="text-align: center;">⚠️ Disclaimer: Information is for guidance only. Always consult official water testing authorities.</p>
+            <p style="text-align: center;">&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+        </div>
+    </footer>
+    
+    <!-- Scripts - Load in correct order -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="js/main.js"></script>
+    <script src="js/mock-api.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/map.js"></script>
+    
+    <script>
+        // Simple initialization that doesn't duplicate map code
+        let pageWaterSources = [];
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Index page loaded');
+            
+            // Check auth and update UI
+            checkAuth();
+            
+            // Load stats and reports
+            await loadPageStats();
+            
+            // Setup search functionality
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    if (typeof filterMapMarkers === 'function') {
+                        filterMapMarkers(e.target.value.toLowerCase());
+                    }
+                });
+            }
+        });
+        
+        async function loadPageStats() {
+            try {
+                const sourcesResult = await API.get('/sources');
+                
+                if (sourcesResult.success && sourcesResult.data) {
+                    pageWaterSources = sourcesResult.data;
+                    const totalSources = pageWaterSources.length;
+                    const safeSources = pageWaterSources.filter(s => s.safety_status === 'safe').length;
+                    
+                    document.getElementById('total-sources').textContent = totalSources;
+                    document.getElementById('safe-sources').textContent = safeSources;
+                }
+                
+                const reportsResult = await API.get('/reports');
+                if (reportsResult.success && reportsResult.data) {
+                    const approvedReports = reportsResult.data.filter(r => r.status === 'approved');
+                    document.getElementById('active-reports').textContent = approvedReports.length;
+                    
+                    const recentReports = approvedReports.slice(0, 5);
+                    const reportsContainer = document.getElementById('recent-reports');
+                    
+                    if (recentReports.length > 0) {
+                        reportsContainer.innerHTML = recentReports.map(report => {
+                            const source = pageWaterSources.find(s => s.id === report.source_id);
+                            return `
+                                <div class="report-item">
+                                    <div class="report-header">
+                                        <strong>${escapeHtml(source ? source.name : 'Unknown Source')}</strong>
+                                        <span class="report-date">${formatDate(report.report_date)}</span>
+                                    </div>
+                                    <span class="report-type ${report.observation_type}">${getObservationTypeText(report.observation_type)}</span>
+                                    <p>${escapeHtml(report.description || 'No description')}</p>
+                                    <small>Reported by: ${escapeHtml(report.reporter_name || 'Anonymous')}</small>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        reportsContainer.innerHTML = '<p style="text-align: center; padding: 2rem;">No reports yet. <a href="report-form.html">Be the first to report</a>!</p>';
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading stats:', error);
+                document.getElementById('total-sources').textContent = '0';
+                document.getElementById('safe-sources').textContent = '0';
+                document.getElementById('active-reports').textContent = '0';
+            }
+        }
+        
+        // Make sure global functions are available
+        window.centerOnUser = function() {
+            if (typeof window.centerOnUserMap === 'function') {
+                window.centerOnUserMap();
+            } else if (typeof centerOnUser === 'function') {
+                centerOnUser();
+            }
+        };
+        
+        window.resetMapView = function() {
+            if (typeof window.resetMapViewMap === 'function') {
+                window.resetMapViewMap();
+            } else if (typeof resetMapView === 'function') {
+                resetMapView();
+            }
+        };
+        
+        window.toggleHealthLayer = function() {
+            if (typeof window.toggleHealthLayerMap === 'function') {
+                window.toggleHealthLayerMap();
+            } else if (typeof toggleHealthLayer === 'function') {
+                toggleHealthLayer();
+            }
+        };
+    </script>
+</body>
+</html>

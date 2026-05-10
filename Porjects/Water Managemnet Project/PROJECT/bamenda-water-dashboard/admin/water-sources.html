@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Water Sources - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .source-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+        }
+        .source-card:hover {
+            box-shadow: var(--shadow);
+        }
+        .source-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .source-coords {
+            font-family: monospace;
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+        .action-icons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .action-icons button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 0.25rem;
+        }
+        .edit-form {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            display: none;
+        }
+        .edit-form.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../health-dashboard.html">Health Data</a></li>
+                <li><a href="../report-form.html">Report Issue</a></li>
+                <li><a href="dashboard.html" class="active">Admin</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <a href="dashboard.html" class="btn btn-secondary" style="margin-bottom: 1rem;">← Back to Admin Dashboard</a>
+        
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Manage Water Sources</h2>
+                <button onclick="showAddModal()" class="btn btn-primary">+ Add New Source</button>
+            </div>
+            
+            <div id="sources-list">
+                <div class="spinner" style="margin: 50px auto;"></div>
+                <p style="text-align: center;">Loading water sources...</p>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Add Source Modal -->
+    <div id="add-source-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Water Source</h3>
+                <button class="close-btn" onclick="closeModal('add-source-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-source-form">
+                    <div class="form-group">
+                        <label>Source Name *</label>
+                        <input type="text" id="source-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Location Description *</label>
+                        <input type="text" id="source-location" class="form-control" required placeholder="Neighborhood or area">
+                    </div>
+                    <div class="form-group">
+                        <label>Source Type *</label>
+                        <select id="source-type" class="form-control" required>
+                            <option value="spring">Spring</option>
+                            <option value="well">Well</option>
+                            <option value="tap">Tap</option>
+                            <option value="borehole">Borehole</option>
+                        </select>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Latitude *</label>
+                                <input type="number" id="source-lat" class="form-control" step="any" required placeholder="e.g., 5.9667">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Longitude *</label>
+                                <input type="number" id="source-lng" class="form-control" step="any" required placeholder="e.g., 10.1500">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Initial Safety Status</label>
+                        <select id="source-status" class="form-control">
+                            <option value="safe">Safe</option>
+                            <option value="caution">Caution</option>
+                            <option value="unsafe">Unsafe</option>
+                            <option value="no-data" selected>No Data</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Source</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="../js/main.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        if (!hasPermission('edit_sources')) {
+            window.location.href = '../index.html';
+        }
+        
+        async function loadSources() {
+            try {
+                const result = await API.get('/sources');
+                const sources = result.data;
+                
+                const html = sources.map(source => `
+                    <div class="source-card" data-id="${source.id}">
+                        <div class="source-card-header">
+                            <div>
+                                <h3>${escapeHtml(source.name)}</h3>
+                                <span class="status-badge status-${source.safety_status}">${getStatusText(source.safety_status)}</span>
+                            </div>
+                            <div class="action-icons">
+                                <button onclick="editSource(${source.id})" title="Edit">✏️</button>
+                                <button onclick="deleteSource(${source.id})" title="Delete">🗑️</button>
+                                <button onclick="viewOnMap(${source.latitude}, ${source.longitude})" title="View on Map">📍</button>
+                            </div>
+                        </div>
+                        <p><strong>Type:</strong> ${capitalizeFirst(source.source_type)}</p>
+                        <p><strong>Location:</strong> ${escapeHtml(source.location_desc)}</p>
+                        <p class="source-coords">📌 ${source.latitude}, ${source.longitude}</p>
+                        <p><small>Last tested: ${formatDate(source.last_test_date)}</small></p>
+                        
+                        <div id="edit-form-${source.id}" class="edit-form">
+                            <h4>Edit Source</h4>
+                            <form onsubmit="updateSource(event, ${source.id})">
+                                <div class="form-group">
+                                    <label>Name</label>
+                                    <input type="text" id="edit-name-${source.id}" class="form-control" value="${escapeHtml(source.name)}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Location</label>
+                                    <input type="text" id="edit-location-${source.id}" class="form-control" value="${escapeHtml(source.location_desc)}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Type</label>
+                                    <select id="edit-type-${source.id}" class="form-control">
+                                        <option value="spring" ${source.source_type === 'spring' ? 'selected' : ''}>Spring</option>
+                                        <option value="well" ${source.source_type === 'well' ? 'selected' : ''}>Well</option>
+                                        <option value="tap" ${source.source_type === 'tap' ? 'selected' : ''}>Tap</option>
+                                        <option value="borehole" ${source.source_type === 'borehole' ? 'selected' : ''}>Borehole</option>
+                                    </select>
+                                </div>
+                                <div class="row">
+                                    <div class="col">
+                                        <label>Latitude</label>
+                                        <input type="number" id="edit-lat-${source.id}" class="form-control" step="any" value="${source.latitude}" required>
+                                    </div>
+                                    <div class="col">
+                                        <label>Longitude</label>
+                                        <input type="number" id="edit-lng-${source.id}" class="form-control" step="any" value="${source.longitude}" required>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Status</label>
+                                    <select id="edit-status-${source.id}" class="form-control">
+                                        <option value="safe" ${source.safety_status === 'safe' ? 'selected' : ''}>Safe</option>
+                                        <option value="caution" ${source.safety_status === 'caution' ? 'selected' : ''}>Caution</option>
+                                        <option value="unsafe" ${source.safety_status === 'unsafe' ? 'selected' : ''}>Unsafe</option>
+                                        <option value="no-data" ${source.safety_status === 'no-data' ? 'selected' : ''}>No Data</option>
+                                    </select>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem;">
+                                    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                                    <button type="button" onclick="cancelEdit(${source.id})" class="btn btn-secondary btn-sm">Cancel</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                `).join('');
+                
+                document.getElementById('sources-list').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading sources:', error);
+                document.getElementById('sources-list').innerHTML = '<div class="alert alert-danger">Error loading water sources</div>';
+            }
+        }
+        
+        function showAddModal() {
+            const modal = document.getElementById('add-source-modal');
+            if (modal) modal.classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.remove('active');
+        }
+        
+        function editSource(sourceId) {
+            const editForm = document.getElementById(`edit-form-${sourceId}`);
+            if (editForm) {
+                editForm.classList.toggle('active');
+            }
+        }
+        
+        function cancelEdit(sourceId) {
+            const editForm = document.getElementById(`edit-form-${sourceId}`);
+            if (editForm) {
+                editForm.classList.remove('active');
+            }
+        }
+        
+        async function updateSource(event, sourceId) {
+            event.preventDefault();
+            
+            const formData = {
+                id: sourceId,
+                name: document.getElementById(`edit-name-${sourceId}`).value,
+                location_desc: document.getElementById(`edit-location-${sourceId}`).value,
+                source_type: document.getElementById(`edit-type-${sourceId}`).value,
+                latitude: parseFloat(document.getElementById(`edit-lat-${sourceId}`).value),
+                longitude: parseFloat(document.getElementById(`edit-lng-${sourceId}`).value),
+                safety_status: document.getElementById(`edit-status-${sourceId}`).value
+            };
+            
+            try {
+                const result = await API.put('/sources', formData);
+                if (result.success) {
+                    showAlert('Water source updated successfully!', 'success');
+                    cancelEdit(sourceId);
+                    loadSources();
+                }
+            } catch (error) {
+                showAlert('Error updating water source', 'danger');
+            }
+        }
+        
+        async function deleteSource(sourceId) {
+            if (confirm('Are you sure you want to delete this water source? This action cannot be undone.')) {
+                try {
+                    const result = await API.delete('/sources', sourceId);
+                    if (result.success) {
+                        showAlert('Water source deleted successfully!', 'success');
+                        loadSources();
+                    }
+                } catch (error) {
+                    showAlert('Error deleting water source', 'danger');
+                }
+            }
+        }
+        
+        function viewOnMap(lat, lng) {
+            window.location.href = `../index.html?lat=${lat}&lng=${lng}`;
+        }
+        
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        
+        // Handle add source form
+        document.getElementById('add-source-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('source-name').value,
+                location_desc: document.getElementById('source-location').value,
+                source_type: document.getElementById('source-type').value,
+                latitude: parseFloat(document.getElementById('source-lat').value),
+                longitude: parseFloat(document.getElementById('source-lng').value),
+                safety_status: document.getElementById('source-status').value
+            };
+            
+            try {
+                const result = await API.post('/sources', formData);
+                if (result.success) {
+                    showAlert('Water source added successfully!', 'success');
+                    closeModal('add-source-modal');
+                    document.getElementById('add-source-form').reset();
+                    loadSources();
+                }
+            } catch (error) {
+                showAlert('Error adding water source', 'danger');
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', loadSources);
+    </script>
+</body>
+</html>

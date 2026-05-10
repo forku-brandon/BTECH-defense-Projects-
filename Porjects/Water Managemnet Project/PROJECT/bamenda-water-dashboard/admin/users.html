@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../health-dashboard.html">Health Data</a></li>
+                <li><a href="../report-form.html">Report Issue</a></li>
+                <li><a href="dashboard.html" class="active">Admin</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <a href="dashboard.html" class="btn btn-secondary" style="margin-bottom: 1rem;">← Back to Admin Dashboard</a>
+        
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>Manage Users</h2>
+                <button onclick="showAddUserModal()" class="btn btn-primary">+ Add User</button>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="data-table" id="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr><td colspan="6">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Add User Modal -->
+    <div id="add-user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New User</h3>
+                <button class="close-btn" onclick="closeModal('add-user-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-user-form">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="user-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="user-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role *</label>
+                        <select id="user-role" class="form-control" required>
+                            <option value="registered">Community Member</option>
+                            <option value="health_worker">Health Worker</option>
+                            <option value="data_entry">Data Entry Clerk</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Password *</label>
+                        <input type="password" id="user-password" class="form-control" required>
+                        <small>Minimum 8 characters</small>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Create User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit User Modal -->
+    <div id="edit-user-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit User</h3>
+                <button class="close-btn" onclick="closeModal('edit-user-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-user-form">
+                    <input type="hidden" id="edit-user-id">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="edit-user-name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="edit-user-email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Role *</label>
+                        <select id="edit-user-role" class="form-control" required>
+                            <option value="registered">Community Member</option>
+                            <option value="health_worker">Health Worker</option>
+                            <option value="data_entry">Data Entry Clerk</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>New Password (leave blank to keep current)</label>
+                        <input type="password" id="edit-user-password" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="../js/main.js"></script>
+    <script src="../js/auth.js"></script>
+    <script>
+        if (!hasPermission('manage_users')) {
+            window.location.href = '../index.html';
+        }
+        
+        // Sample users data
+        let users = [
+            { id: 1, name: 'John Admin', email: 'admin@example.com', role: 'admin', created_at: '2024-01-01' },
+            { id: 2, name: 'Sarah Clerk', email: 'clerk@example.com', role: 'data_entry', created_at: '2024-01-15' },
+            { id: 3, name: 'Dr. Michael', email: 'health@example.com', role: 'health_worker', created_at: '2024-02-01' },
+            { id: 4, name: 'Community User', email: 'user@example.com', role: 'registered', created_at: '2024-02-10' }
+        ];
+        
+        function loadUsers() {
+            const html = users.map(user => `
+                <tr>
+                    <td>${user.id}</td>
+                    <td><strong>${escapeHtml(user.name)}</strong></td>
+                    <td>${user.email}</td>
+                    <td><span class="role-badge role-${user.role}">${user.role.replace('_', ' ')}</span></td>
+                    <td>${user.created_at}</td>
+                    <td>
+                        <button onclick="editUser(${user.id})" class="btn btn-sm btn-secondary">Edit</button>
+                        <button onclick="deleteUser(${user.id})" class="btn btn-sm btn-danger">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            document.getElementById('users-table-body').innerHTML = html;
+        }
+        
+        function showAddUserModal() {
+            document.getElementById('add-user-modal').classList.add('active');
+        }
+        
+        function editUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                document.getElementById('edit-user-id').value = user.id;
+                document.getElementById('edit-user-name').value = user.name;
+                document.getElementById('edit-user-email').value = user.email;
+                document.getElementById('edit-user-role').value = user.role;
+                document.getElementById('edit-user-password').value = '';
+                document.getElementById('edit-user-modal').classList.add('active');
+            }
+        }
+        
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                users = users.filter(u => u.id !== userId);
+                loadUsers();
+                showAlert('User deleted successfully', 'success');
+            }
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        document.getElementById('add-user-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newUser = {
+                id: users.length + 1,
+                name: document.getElementById('user-name').value,
+                email: document.getElementById('user-email').value,
+                role: document.getElementById('user-role').value,
+                created_at: new Date().toISOString().split('T')[0]
+            };
+            
+            users.push(newUser);
+            loadUsers();
+            closeModal('add-user-modal');
+            document.getElementById('add-user-form').reset();
+            showAlert('User created successfully', 'success');
+        });
+        
+        document.getElementById('edit-user-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const userId = parseInt(document.getElementById('edit-user-id').value);
+            const userIndex = users.findIndex(u => u.id === userId);
+            
+            if (userIndex !== -1) {
+                users[userIndex] = {
+                    ...users[userIndex],
+                    name: document.getElementById('edit-user-name').value,
+                    email: document.getElementById('edit-user-email').value,
+                    role: document.getElementById('edit-user-role').value
+                };
+                loadUsers();
+                closeModal('edit-user-modal');
+                showAlert('User updated successfully', 'success');
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', loadUsers);
+    </script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!-- pages/admin-login.html - Admin Login -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Admin Login - SSVIAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>🔧 Admin Portal</span>
+            <span>Secure Access</span>
+        </div>
+        
+        <div class="header" style="background: linear-gradient(135deg, #6c5ce7, #5a4ac7);">
+            <h1>🔧 Administrator</h1>
+            <p>System Management Portal</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <div class="card">
+                <div class="card-title">Admin Authentication</div>
+                <form id="admin-login-form">
+                    <div class="form-group">
+                        <label>👤 Admin Email</label>
+                        <input type="email" id="email" placeholder="admin@ssvias.cm" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔒 Master Password</label>
+                        <input type="password" id="password" placeholder="Enter master password" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔑 2FA Code (if enabled)</label>
+                        <input type="text" id="2fa" placeholder="Enter 6-digit code">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Access Admin Panel</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Admin Credentials</div>
+                <div class="alert alert-info">
+                    <strong>Demo Admin Access:</strong><br>
+                    Email: admin@ssvias.cm<br>
+                    Password: admin123<br>
+                    <small style="color: #e74c3c;">⚠️ Change default password after first login</small>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Security Notice</div>
+                <p>All admin actions are logged and monitored. Unauthorized access is prohibited and will be prosecuted under Cameroon cyber laws.</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('admin-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Demo admin check
+            if (email === 'admin@ssvias.cm' && password === 'admin123') {
+                const adminUser = {
+                    id: 999,
+                    name: 'System Administrator',
+                    email: email,
+                    role: 'admin',
+                    isAdmin: true
+                };
+                localStorage.setItem('user', JSON.stringify(adminUser));
+                showAlert('Admin access granted!', 'success');
+                setTimeout(() => {
+                    window.location.href = 'admin-dashboard.html';
+                }, 1500);
+            } else {
+                showAlert('Invalid admin credentials!', 'danger');
+                // Log failed attempt
+                console.log('Failed admin login attempt:', email);
+            }
+        });
+    </script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Source Details - Bamenda Water & Health Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .source-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .source-status-large {
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .info-item {
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: var(--radius-md);
+        }
+        .info-label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+            margin-bottom: 0.25rem;
+        }
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        .test-result-good {
+            color: var(--safe);
+        }
+        .test-result-bad {
+            color: var(--unsafe);
+        }
+        .test-result-warning {
+            color: var(--caution);
+        }
+        .photo-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .photo-item {
+            background: var(--bg-light);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .photo-caption {
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            text-align: center;
+        }
+        .safety-score {
+            text-align: center;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+            color: white;
+            border-radius: var(--radius-lg);
+        }
+        .score-number {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+        .score-label {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="health-dashboard.html">Health Data</a></li>
+                <li><a href="report-form.html">Report Issue</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <a href="index.html" class="btn btn-secondary" style="margin-bottom: 1.5rem;">
+            ← Back to Home
+        </a>
+        
+        <div id="source-content">
+            <div class="card" style="text-align: center;">
+                <div class="spinner" style="margin: 50px auto;"></div>
+                <p>Loading water source details...</p>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>⚠️ <strong>Disclaimer:</strong> Information is for guidance only. Always consult official water testing authorities for health decisions.</p>
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <!-- Report Modal -->
+    <div id="quick-report-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Quick Report</h3>
+                <button class="close-btn" onclick="closeModal('quick-report-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="quick-report-form">
+                    <input type="hidden" id="quick-source-id">
+                    <div class="form-group">
+                        <label>What did you observe? *</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="quick_observation" value="clear" required> 💧 Clear Water
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="quick_observation" value="cloudy"> ☁️ Cloudy Water
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="quick_observation" value="bad_smell"> 👃 Bad Smell
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="quick_observation" value="bad_taste"> 😖 Bad Taste
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="quick_observation" value="dumping"> 🗑️ Waste Dumping
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Additional Details</label>
+                        <textarea id="quick-description" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Your Name (Optional)</label>
+                        <input type="text" id="quick-reporter" class="form-control" placeholder="Anonymous">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Submit Report</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+ <script src="js/main.js"></script>
+<script src="js/mock-api.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/map.js"></script>
+    <script>
+        let qualityChart;
+        let currentSource = null;
+        
+        // Get source ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const sourceId = urlParams.get('id');
+        
+        async function loadSourceDetails() {
+            if (!sourceId) {
+                document.getElementById('source-content').innerHTML = `
+                    <div class="card">
+                        <div class="alert alert-danger">No water source specified. Please return to the <a href="index.html">Home</a> and select a water source.</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                const sourceResult = await API.get('/sources/detail', { id: sourceId });
+                const testsResult = await API.get('/tests', { source_id: sourceId });
+                const reportsResult = await API.get('/reports', { source_id: sourceId });
+                
+                currentSource = sourceResult.data;
+                const tests = testsResult.data || [];
+                const reports = reportsResult.data.filter(r => r.status === 'approved');
+                
+                const statusText = getStatusText(currentSource.safety_status);
+                const statusClass = `status-${currentSource.safety_status}`;
+                
+                // Calculate safety score
+                const safetyScore = calculateSafetyScore(currentSource, tests);
+                
+                const html = `
+                    <div class="card">
+                        <div class="source-header">
+                            <div>
+                                <h1>${escapeHtml(currentSource.name)}</h1>
+                                <p>${escapeHtml(currentSource.location_desc)}</p>
+                            </div>
+                            <div class="source-status-large ${statusClass}">
+                                ${statusText}
+                            </div>
+                        </div>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Source Type</div>
+                                <div class="info-value">${capitalizeFirst(currentSource.source_type)}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Last Tested</div>
+                                <div class="info-value">${formatDate(currentSource.last_test_date)}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">GPS Coordinates</div>
+                                <div class="info-value">${currentSource.latitude}, ${currentSource.longitude}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Total Reports</div>
+                                <div class="info-value">${reports.length}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col">
+                                <div class="safety-score">
+                                    <div class="score-number">${safetyScore}%</div>
+                                    <div class="score-label">Overall Safety Score</div>
+                                    <div style="margin-top: 0.5rem; font-size: 0.875rem;">Based on ${tests.length} official tests</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="action-buttons">
+                                    <button onclick="openQuickReport()" class="btn btn-primary">📢 Report an Issue</button>
+                                    <button onclick="window.location.href='report-form.html?source=${sourceId}'" class="btn btn-secondary">📝 Detailed Report</button>
+                                    ${hasPermission('add_test_results') ? `<button onclick="addTestResult()" class="btn btn-secondary">🔬 Add Test Result</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔬 Official Test Results</h3>
+                            <span class="badge">${tests.length} tests</span>
+                        </div>
+                        ${tests.length > 0 ? `
+                            <div class="table-responsive">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>pH Level</th>
+                                            <th>Turbidity</th>
+                                            <th>Coliform</th>
+                                            <th>Tested By</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${tests.map(test => `
+                                            <tr>
+                                                <td>${formatDate(test.test_date)}</td>
+                                                <td class="${test.ph_level ? (test.ph_level >= 6.5 && test.ph_level <= 8.5 ? 'test-result-good' : 'test-result-bad') : ''}">
+                                                    ${test.ph_level || 'N/A'}
+                                                </td>
+                                                <td class="${test.turbidity === 'Low' ? 'test-result-good' : test.turbidity === 'High' ? 'test-result-bad' : 'test-result-warning'}">
+                                                    ${test.turbidity || 'N/A'}
+                                                </td>
+                                                <td class="${!test.coliform_present ? 'test-result-good' : 'test-result-bad'}">
+                                                    ${test.coliform_present ? '⚠️ Present' : '✓ Absent'}
+                                                </td>
+                                                <td>${escapeHtml(test.tested_by)}</td>
+                                                <td>
+                                                    <span class="status-badge ${getTestStatusClass(test)}">
+                                                        ${getTestStatusText(test)}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ` : `
+                            <div class="alert alert-info">
+                                No official test results available yet. Check back soon for updates.
+                            </div>
+                        `}
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📊 Water Quality Trend</h3>
+                        </div>
+                        <canvas id="quality-trend-chart" style="height: 300px;"></canvas>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>👥 Community Reports</h3>
+                            <a href="report-form.html?source=${sourceId}" class="btn btn-sm btn-primary">+ Add Report</a>
+                        </div>
+                        ${reports.length > 0 ? `
+                            <div class="report-feed">
+                                ${reports.map(report => `
+                                    <div class="report-item">
+                                        <div class="report-header">
+                                            <span class="report-type ${report.observation_type}">${getObservationTypeText(report.observation_type)}</span>
+                                            <span class="report-date">${formatDate(report.report_date)}</span>
+                                        </div>
+                                        <p>${escapeHtml(report.description)}</p>
+                                        <small>Reported by: ${escapeHtml(report.reporter_name || 'Anonymous')}</small>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : `
+                            <div class="alert alert-info">
+                                No community reports yet. <a href="report-form.html?source=${sourceId}">Be the first to report</a>!
+                            </div>
+                        `}
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>ℹ️ Safety Recommendations</h3>
+                        </div>
+                        <div id="recommendations">
+                            ${generateRecommendations(currentSource, tests)}
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('source-content').innerHTML = html;
+                
+                // Initialize chart after DOM is updated
+                if (tests.length > 0) {
+                    initQualityTrendChart(tests);
+                }
+                
+            } catch (error) {
+                console.error('Error loading source details:', error);
+                document.getElementById('source-content').innerHTML = `
+                    <div class="card">
+                        <div class="alert alert-danger">Error loading water source details. Please try again later.</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function calculateSafetyScore(source, tests) {
+            if (tests.length === 0) return 50;
+            
+            let score = 100;
+            
+            // Deduct for unsafe tests
+            tests.forEach(test => {
+                if (test.coliform_present) score -= 20;
+                if (test.turbidity === 'High') score -= 15;
+                if (test.turbidity === 'Medium') score -= 5;
+                if (test.ph_level && (test.ph_level < 6.5 || test.ph_level > 8.5)) score -= 10;
+            });
+            
+            // Recent tests matter more
+            const recentTests = tests.slice(0, 3);
+            const recencyFactor = recentTests.length / tests.length;
+            score = score * (0.7 + recencyFactor * 0.3);
+            
+            // Cap between 0 and 100
+            return Math.max(0, Math.min(100, Math.round(score)));
+        }
+        
+        function getTestStatusClass(test) {
+            if (test.coliform_present) return 'status-unsafe';
+            if (test.turbidity === 'High') return 'status-unsafe';
+            if (test.turbidity === 'Medium') return 'status-caution';
+            return 'status-safe';
+        }
+        
+        function getTestStatusText(test) {
+            if (test.coliform_present) return 'Unsafe';
+            if (test.turbidity === 'High') return 'Poor';
+            if (test.turbidity === 'Medium') return 'Fair';
+            return 'Good';
+        }
+        
+        function initQualityTrendChart(tests) {
+            const ctx = document.getElementById('quality-trend-chart').getContext('2d');
+            const sortedTests = [...tests].sort((a, b) => new Date(a.test_date) - new Date(b.test_date));
+            const dates = sortedTests.map(t => formatDate(t.test_date));
+            const scores = sortedTests.map(t => {
+                let score = 100;
+                if (t.coliform_present) score -= 40;
+                if (t.turbidity === 'High') score -= 30;
+                if (t.turbidity === 'Medium') score -= 15;
+                if (t.ph_level && (t.ph_level < 6.5 || t.ph_level > 8.5)) score -= 20;
+                return Math.max(0, score);
+            });
+            
+            if (qualityChart) qualityChart.destroy();
+            
+            qualityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Water Quality Score',
+                        data: scores,
+                        borderColor: '#2e7d32',
+                        backgroundColor: 'rgba(46, 125, 50, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointBackgroundColor: scores.map(s => 
+                            s >= 80 ? '#4caf50' : s >= 60 ? '#ffc107' : '#f44336'
+                        ),
+                        pointBorderColor: '#fff',
+                        pointRadius: 6,
+                        pointHoverRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: 'Quality Score (0-100)'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const score = context.raw;
+                                    let status = '';
+                                    if (score >= 80) status = 'Good';
+                                    else if (score >= 60) status = 'Fair';
+                                    else status = 'Poor';
+                                    return `Score: ${score} (${status})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function generateRecommendations(source, tests) {
+            const lastTest = tests[0];
+            
+            if (!lastTest || tests.length === 0) {
+                return `
+                    <div class="alert alert-warning">
+                        <strong>⚠️ No Recent Test Data</strong>
+                        <p>This water source needs official testing. Please avoid using if you notice any issues.</p>
+                    </div>
+                `;
+            }
+            
+            if (source.safety_status === 'safe') {
+                return `
+                    <div class="alert alert-success">
+                        <strong>✓ Safe for Drinking</strong>
+                        <p>Based on recent test results, this water source meets safety standards. Continue regular monitoring and report any changes.</p>
+                    </div>
+                `;
+            }
+            
+            if (source.safety_status === 'caution') {
+                return `
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Use with Caution</strong>
+                        <p>This water source shows some concerning parameters. Recommended actions:</p>
+                        <ul>
+                            <li>Boil water before drinking</li>
+                            <li>Avoid use for vulnerable individuals (children, elderly)</li>
+                            <li>Report any health issues to local clinic</li>
+                            <li>Request official retesting</li>
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            if (source.safety_status === 'unsafe') {
+                return `
+                    <div class="alert alert-danger">
+                        <strong>🔴 DO NOT DRINK</strong>
+                        <p>This water source is unsafe for consumption. Immediate actions:</p>
+                        <ul>
+                            <li>DO NOT use for drinking or cooking</li>
+                            <li>Alert neighbors and community members</li>
+                            <li>Report to local health authorities</li>
+                            <li>Use alternative safe water sources</li>
+                            <li>Seek medical attention if you've consumed this water</li>
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            return '';
+        }
+        
+        function openQuickReport() {
+            document.getElementById('quick-source-id').value = sourceId;
+            const modal = document.getElementById('quick-report-modal');
+            if (modal) modal.classList.add('active');
+        }
+        
+        function addTestResult() {
+            window.location.href = `admin/test-results.html?source=${sourceId}`;
+        }
+        
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.remove('active');
+        }
+        
+        function capitalizeFirst(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+        
+        // Handle quick report submission
+        document.addEventListener('submit', async (e) => {
+            if (e.target.id === 'quick-report-form') {
+                e.preventDefault();
+                
+                const formData = {
+                    source_id: document.getElementById('quick-source-id').value,
+                    observation_type: document.querySelector('input[name="quick_observation"]:checked')?.value,
+                    description: document.getElementById('quick-description').value,
+                    reporter_name: document.getElementById('quick-reporter').value || 'Anonymous',
+                    report_date: new Date().toISOString().split('T')[0]
+                };
+                
+                if (!formData.observation_type) {
+                    showAlert('Please select an observation type', 'warning');
+                    return;
+                }
+                
+                try {
+                    const result = await API.post('/reports', formData);
+                    if (result.success) {
+                        showAlert('Thank you! Your report has been submitted.', 'success');
+                        closeModal('quick-report-modal');
+                        document.getElementById('quick-report-form').reset();
+                        loadSourceDetails(); // Reload to show new report
+                    }
+                } catch (error) {
+                    showAlert('Error submitting report', 'danger');
+                }
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', loadSourceDetails);
+    </script>
+</body>
+</html>

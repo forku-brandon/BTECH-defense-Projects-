@@ -1,0 +1,326 @@
+<!-- pages/admin-dashboard.html - Admin Dashboard -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Admin Dashboard - SSVIAS</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>🔧 Admin Panel</span>
+            <span>SSVIAS Cameroon</span>
+        </div>
+        
+        <div class="header">
+            <h1>🔧 System Administrator</h1>
+            <p>Full System Control</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <!-- Admin Stats -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px;">
+                <div class="card" style="text-align: center; padding: 10px;">
+                    <div style="font-size: 24px;">👥</div>
+                    <div id="total-users" style="font-size: 20px; font-weight: bold;">0</div>
+                    <div style="font-size: 11px;">Users</div>
+                </div>
+                <div class="card" style="text-align: center; padding: 10px;">
+                    <div style="font-size: 24px;">🚗</div>
+                    <div id="total-vehicles" style="font-size: 20px; font-weight: bold;">0</div>
+                    <div style="font-size: 11px;">Vehicles</div>
+                </div>
+                <div class="card" style="text-align: center; padding: 10px;">
+                    <div style="font-size: 24px;">⚠️</div>
+                    <div id="total-reports" style="font-size: 20px; font-weight: bold;">0</div>
+                    <div style="font-size: 11px;">Reports</div>
+                </div>
+            </div>
+            
+            <!-- Admin Tabs -->
+            <div style="display: flex; gap: 5px; margin-bottom: 20px; flex-wrap: wrap;">
+                <button class="btn btn-primary" style="width: auto; padding: 8px 16px;" onclick="showTab('users')">Users</button>
+                <button class="btn btn-secondary" style="width: auto; padding: 8px 16px;" onclick="showTab('vehicles')">Vehicles</button>
+                <button class="btn btn-danger" style="width: auto; padding: 8px 16px;" onclick="showTab('reports')">Reports</button>
+                <button class="btn" style="width: auto; padding: 8px 16px; background: var(--info-color);" onclick="showTab('system')">System</button>
+            </div>
+            
+            <!-- Users Tab -->
+            <div id="users-tab" class="tab-content">
+                <div class="card">
+                    <div class="card-title">👥 User Management</div>
+                    <button class="btn btn-success" style="margin-bottom: 15px;" onclick="showAddUserModal()">+ Add New User</button>
+                    <div id="users-list">
+                        <div class="alert alert-info">Loading users...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Vehicles Tab -->
+            <div id="vehicles-tab" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-title">🚗 Vehicle Management</div>
+                    <button class="btn btn-success" style="margin-bottom: 15px;" onclick="showAddVehicleModal()">+ Register Vehicle</button>
+                    <div id="vehicles-list">
+                        <div class="alert alert-info">Loading vehicles...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reports Tab -->
+            <div id="reports-tab" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-title">⚠️ Report Verification</div>
+                    <div id="pending-reports">
+                        <div class="alert alert-info">Loading pending reports...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Tab -->
+            <div id="system-tab" class="tab-content" style="display: none;">
+                <div class="card">
+                    <div class="card-title">⚙️ System Settings</div>
+                    <div class="form-group">
+                        <label>System Name</label>
+                        <input type="text" id="system-name" value="SSVIAS Cameroon">
+                    </div>
+                    <div class="form-group">
+                        <label>Alert Threshold (days)</label>
+                        <input type="number" id="alert-threshold" value="7">
+                    </div>
+                    <div class="form-group">
+                        <label>Maintenance Mode</label>
+                        <select id="maintenance-mode">
+                            <option value="0">Off</option>
+                            <option value="1">On</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSystemSettings()">Save Settings</button>
+                    <button class="btn btn-danger" style="margin-top: 10px;" onclick="backupDatabase()">📀 Backup Database</button>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">📊 System Logs</div>
+                    <div id="system-logs">
+                        <div class="alert alert-info">Loading logs...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="admin-dashboard.html" class="nav-item active">🏠 Dashboard</a>
+            <a href="#" class="nav-item" onclick="logout()">🚪 Logout</a>
+        </div>
+    </div>
+    
+    <!-- Add User Modal -->
+    <div id="user-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; max-width: 480px; margin: 0 auto;">
+        <div style="background: white; margin: 50px 20px; padding: 20px; border-radius: 12px;">
+            <h3>Add New User</h3>
+            <div class="form-group">
+                <input type="text" id="new-name" placeholder="Full Name">
+            </div>
+            <div class="form-group">
+                <input type="email" id="new-email" placeholder="Email">
+            </div>
+            <div class="form-group">
+                <input type="tel" id="new-phone" placeholder="Phone">
+            </div>
+            <div class="form-group">
+                <select id="new-role">
+                    <option value="citizen">Citizen</option>
+                    <option value="police">Police</option>
+                    <option value="government">Government</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <input type="password" id="new-password" placeholder="Password">
+            </div>
+            <button class="btn btn-success" onclick="addUser()">Create User</button>
+            <button class="btn" style="margin-top: 10px;" onclick="closeModal('user-modal')">Cancel</button>
+        </div>
+    </div>
+    
+    <script>
+        let currentTab = 'users';
+        
+        async function loadAdminDashboard() {
+            const user = localStorage.getItem('user');
+            if (!user || JSON.parse(user).role !== 'admin') {
+                window.location.href = 'admin-login.html';
+                return;
+            }
+            
+            await loadStats();
+            await loadUsers();
+            await loadVehicles();
+            await loadPendingReports();
+            await loadSystemLogs();
+        }
+        
+        async function loadStats() {
+            const users = await API.request('get-users.php');
+            const vehicles = await API.request('get-vehicles.php');
+            const reports = await API.request('get-all-reports.php');
+            
+            if (users.success) document.getElementById('total-users').textContent = users.data.length;
+            if (vehicles.success) document.getElementById('total-vehicles').textContent = vehicles.data.length;
+            if (reports.success) document.getElementById('total-reports').textContent = reports.data.length;
+        }
+        
+        async function loadUsers() {
+            const result = await API.request('get-users.php');
+            const container = document.getElementById('users-list');
+            
+            if (result.success && result.data) {
+                container.innerHTML = result.data.map(user => `
+                    <div class="alert alert-info" style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <strong>${user.name}</strong>
+                            <span class="badge">${user.role}</span>
+                        </div>
+                        <div><small>📧 ${user.email}</small></div>
+                        <div><small>📱 ${user.phone}</small></div>
+                        <div style="margin-top: 8px;">
+                            <button class="btn btn-warning" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="editUser(${user.id})">Edit</button>
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="deleteUser(${user.id})">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        async function loadVehicles() {
+            const result = await API.request('get-vehicles.php');
+            const container = document.getElementById('vehicles-list');
+            
+            if (result.success && result.data) {
+                container.innerHTML = result.data.map(vehicle => `
+                    <div class="alert alert-${vehicle.status === 'stolen' ? 'danger' : 'success'}" style="margin-bottom: 10px;">
+                        <div><strong>${vehicle.plate_number}</strong> - ${vehicle.make} ${vehicle.model}</div>
+                        <div><small>Owner: ${vehicle.owner_name || 'Unknown'}</small></div>
+                        <div><small>Status: ${vehicle.status.toUpperCase()}</small></div>
+                        <div style="margin-top: 8px;">
+                            <button class="btn btn-primary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="editVehicle(${vehicle.id})">Edit</button>
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="deleteVehicle(${vehicle.id})">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        async function loadPendingReports() {
+            const result = await API.request('get-pending-reports.php');
+            const container = document.getElementById('pending-reports');
+            
+            if (result.success && result.data && result.data.length > 0) {
+                container.innerHTML = result.data.map(report => `
+                    <div class="alert alert-warning" style="margin-bottom: 10px;">
+                        <div><strong>Report #${report.id}</strong> - Vehicle: ${report.plate_number}</div>
+                        <div>Type: ${report.type}</div>
+                        <div>Reported by: ${report.reporter_name}</div>
+                        <div>Date: ${formatDate(report.created_at)}</div>
+                        <div style="margin-top: 8px;">
+                            <button class="btn btn-success" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="verifyReport(${report.id}, true)">✓ Approve</button>
+                            <button class="btn btn-danger" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="verifyReport(${report.id}, false)">✗ Reject</button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="alert alert-success">No pending reports</div>';
+            }
+        }
+        
+        function showTab(tab) {
+            currentTab = tab;
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.getElementById(`${tab}-tab`).style.display = 'block';
+        }
+        
+        function showAddUserModal() {
+            document.getElementById('user-modal').style.display = 'block';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        async function addUser() {
+            const userData = {
+                name: document.getElementById('new-name').value,
+                email: document.getElementById('new-email').value,
+                phone: document.getElementById('new-phone').value,
+                role: document.getElementById('new-role').value,
+                password: document.getElementById('new-password').value
+            };
+            
+            const result = await API.request('create-user.php', 'POST', userData);
+            if (result.success) {
+                showAlert('User created successfully', 'success');
+                closeModal('user-modal');
+                loadUsers();
+                loadStats();
+            }
+        }
+        
+        async function verifyReport(reportId, approve) {
+            const result = await API.request('verify-report.php', 'POST', { report_id: reportId, approve: approve });
+            if (result.success) {
+                showAlert(`Report ${approve ? 'approved' : 'rejected'}`, 'success');
+                loadPendingReports();
+            }
+        }
+        
+        function saveSystemSettings() {
+            const settings = {
+                system_name: document.getElementById('system-name').value,
+                alert_threshold: document.getElementById('alert-threshold').value,
+                maintenance_mode: document.getElementById('maintenance-mode').value
+            };
+            localStorage.setItem('systemSettings', JSON.stringify(settings));
+            showAlert('Settings saved successfully', 'success');
+        }
+        
+        function backupDatabase() {
+            showAlert('Database backup initiated. Download will start shortly.', 'success');
+            // Simulate backup
+            setTimeout(() => {
+                const data = JSON.stringify(localStorage);
+                const blob = new Blob([data], {type: 'application/json'});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ssvias_backup_${new Date().toISOString()}.json`;
+                a.click();
+            }, 1000);
+        }
+        
+        async function loadSystemLogs() {
+            const logs = JSON.parse(localStorage.getItem('systemLogs') || '[]');
+            const container = document.getElementById('system-logs');
+            
+            if (logs.length > 0) {
+                container.innerHTML = logs.slice(0,10).map(log => `
+                    <div class="alert alert-info" style="margin-bottom: 5px; padding: 8px; font-size: 12px;">
+                        [${formatDate(log.timestamp)}] ${log.action} - ${log.user}
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="alert alert-info">No system logs available</div>';
+            }
+        }
+        
+        loadAdminDashboard();
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

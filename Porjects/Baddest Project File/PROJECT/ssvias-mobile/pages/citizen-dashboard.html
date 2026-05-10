@@ -1,0 +1,224 @@
+<!-- pages/citizen-dashboard.html - Citizen Dashboard for Unregistered Users -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Citizen Dashboard - SSVIAS Cameroon</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>🇨🇲 Citizen Portal</span>
+            <span>Public Access</span>
+        </div>
+        
+        <div class="header">
+            <h1>👥 Citizen Dashboard</h1>
+            <p>Help Fight Vehicle Theft in Cameroon</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <!-- Welcome Card -->
+            <div class="card">
+                <div class="card-title">Welcome, Citizen!</div>
+                <p>You are using the public version of SSVIAS. As a citizen, you can:</p>
+                <ul style="padding-left: 20px; margin-top: 10px;">
+                    <li>✓ Verify vehicle status (Safe/Stolen)</li>
+                    <li>✓ Report suspicious vehicle sightings</li>
+                    <li>✓ View public alerts and announcements</li>
+                    <li>✓ Access emergency contacts</li>
+                </ul>
+                <div class="alert alert-info" style="margin-top: 15px;">
+                    <strong>💡 Tip:</strong> <a href="register.html" style="color: var(--primary-color);">Create a free account</a> to register your vehicles and receive instant alerts!
+                </div>
+            </div>
+            
+            <!-- Quick Verify Section -->
+            <div class="card">
+                <div class="card-title">🔍 Quick Vehicle Verification</div>
+                <div class="form-group">
+                    <input type="text" id="quick-plate" placeholder="Enter Plate Number (e.g., AB123CD)" maxlength="8">
+                </div>
+                <button class="btn btn-primary" onclick="quickVerify()">Verify Now</button>
+                <button class="btn btn-secondary" style="margin-top: 10px;" onclick="openCameraForVerify()">📷 Scan License Plate</button>
+            </div>
+            
+            <!-- Report Sighting Section -->
+            <div class="card">
+                <div class="card-title">🚨 Report a Sighting</div>
+                <p>See a suspicious or stolen vehicle? Report it immediately!</p>
+                <button class="btn btn-danger" onclick="window.location.href='report-sighting.html'">Report Sighting</button>
+            </div>
+            
+            <!-- Recent Stolen Vehicles Alert -->
+            <div class="card">
+                <div class="card-title">⚠️ Recent Stolen Vehicles Alert</div>
+                <div id="stolen-alerts">
+                    <div class="alert alert-info">Loading alerts...</div>
+                </div>
+            </div>
+            
+            <!-- Safety Tips -->
+            <div class="card">
+                <div class="card-title">🛡️ Safety Tips for Citizens</div>
+                <div class="alert alert-warning" style="margin-bottom: 10px;">
+                    <strong>🚗 Vehicle Safety:</strong><br>
+                    • Always lock your vehicle<br>
+                    • Park in well-lit areas<br>
+                    • Install a tracking device<br>
+                    • Never leave keys in the car
+                </div>
+                <div class="alert alert-warning">
+                    <strong>⚠️ If You Spot a Stolen Vehicle:</strong><br>
+                    • Do NOT approach the suspects<br>
+                    • Keep a safe distance<br>
+                    • Note the location and direction<br>
+                    • Call police immediately: <strong>117</strong>
+                </div>
+            </div>
+            
+            <!-- Emergency Contacts -->
+            <div class="card">
+                <div class="card-title">📞 Emergency Contacts - Cameroon</div>
+                <div class="emergency-contacts">
+                    <div class="alert alert-danger" style="padding: 10px; margin-bottom: 8px;">
+                        <strong>🚔 Police Emergency:</strong> 117
+                    </div>
+                    <div class="alert alert-danger" style="padding: 10px; margin-bottom: 8px;">
+                        <strong>🔫 Gendarmerie:</strong> 1500
+                    </div>
+                    <div class="alert alert-danger" style="padding: 10px; margin-bottom: 8px;">
+                        <strong>🚑 Ambulance:</strong> 119
+                    </div>
+                    <div class="alert alert-danger" style="padding: 10px;">
+                        <strong>🔥 Fire Brigade:</strong> 118
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Public Announcements -->
+            <div class="card">
+                <div class="card-title">📢 Public Announcements</div>
+                <div id="announcements">
+                    <div class="alert alert-info">
+                        <strong>📅 January 2024:</strong> Increased vehicle theft reported in Douala and Yaoundé. Stay vigilant!
+                    </div>
+                    <div class="alert alert-info">
+                        <strong>🚨 New Feature:</strong> AI license plate recognition now available on mobile devices.
+                    </div>
+                    <div class="alert alert-success">
+                        <strong>✅ Recovery Success:</strong> 15 stolen vehicles recovered this month through citizen reports.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Call to Action -->
+            <div class="card">
+                <div class="card-title">Join the Fight Against Vehicle Theft</div>
+                <p>Create a free account to:</p>
+                <ul style="padding-left: 20px;">
+                    <li>Register your vehicles</li>
+                    <li>Get instant alerts for stolen vehicles in your area</li>
+                    <li>Track your reports</li>
+                    <li>Receive recovery updates</li>
+                </ul>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-primary" onclick="window.location.href='register.html'">Create Account</button>
+                    <button class="btn btn-secondary" onclick="window.location.href='login.html'">Login</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="citizen-dashboard.html" class="nav-item active">🏠 Home</a>
+            <a href="verify-vehicle.html" class="nav-item">🔍 Verify</a>
+            <a href="report-sighting.html" class="nav-item">🚨 Report</a>
+            <a href="login.html" class="nav-item">👤 Login</a>
+        </div>
+    </div>
+    
+    <!-- Camera Modal -->
+    <div id="camera-modal" class="camera-modal">
+        <div class="camera-container">
+            <video id="camera-feed" autoplay playsinline></video>
+            <div class="camera-controls">
+                <button id="capture-btn" class="camera-btn">📸</button>
+            </div>
+            <button id="close-camera" class="close-camera">✕ Close</button>
+        </div>
+    </div>
+    
+    <script>
+        let cameraHandler = null;
+        
+        async function quickVerify() {
+            const plate = document.getElementById('quick-plate').value.trim().toUpperCase();
+            if (!plate) {
+                showAlert('Please enter a plate number', 'danger');
+                return;
+            }
+            
+            showAlert('Verifying vehicle...', 'info');
+            const result = await API.verifyVehicle(plate);
+            
+            if (result.success && result.vehicle) {
+                localStorage.setItem('lastVerification', JSON.stringify(result.vehicle));
+                window.location.href = 'vehicle-status.html';
+            } else {
+                showAlert('Vehicle not found or error occurred', 'danger');
+            }
+        }
+        
+        function openCameraForVerify() {
+            openCamera(async (plate) => {
+                document.getElementById('quick-plate').value = plate;
+                await quickVerify();
+            });
+        }
+        
+        async function loadStolenAlerts() {
+            const result = await API.getStolenVehicles();
+            const container = document.getElementById('stolen-alerts');
+            
+            if (result.success && result.data && result.data.length > 0) {
+                container.innerHTML = result.data.slice(0, 5).map(vehicle => `
+                    <div class="alert alert-danger" style="margin-bottom: 10px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <strong>⚠️ ${vehicle.plate || vehicle.plate_number}</strong>
+                            <span class="badge badge-danger">STOLEN</span>
+                        </div>
+                        <div><small>${vehicle.make || 'Unknown'} ${vehicle.model || 'Vehicle'}</small></div>
+                        <div><small>Reported: ${formatDate(vehicle.reported_date || new Date())}</small></div>
+                        <button class="btn btn-warning" style="margin-top: 8px; padding: 6px 12px; font-size: 12px; width: auto;" 
+                                onclick="reportSightingForPlate('${vehicle.plate || vehicle.plate_number}')">
+                            👁️ Report Sighting
+                        </button>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<div class="alert alert-success">No recent stolen vehicle reports</div>';
+            }
+        }
+        
+        function reportSightingForPlate(plate) {
+            localStorage.setItem('reportVehiclePlate', plate);
+            window.location.href = 'report-sighting.html';
+        }
+        
+        // Initialize
+        loadStolenAlerts();
+        
+        // Auto-refresh alerts every 30 seconds
+        setInterval(loadStolenAlerts, 30000);
+    </script>
+    <script src="../js/api.js"></script>
+    <script src="../js/ocr.js"></script>
+    <script src="../js/camera.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>

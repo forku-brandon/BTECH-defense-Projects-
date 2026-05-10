@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Bamenda Water & Health</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .admin-container {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+        .admin-sidebar {
+            width: 280px;
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .admin-sidebar-header {
+            padding: 1.5rem;
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+            color: white;
+            text-align: center;
+        }
+        .sidebar-nav {
+            padding: 0.5rem;
+        }
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            color: var(--text-dark);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            margin-bottom: 0.25rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        .sidebar-nav a:hover {
+            background-color: var(--bg-light);
+        }
+        .sidebar-nav a.active {
+            background-color: var(--primary-green);
+            color: white;
+        }
+        .admin-content {
+            flex: 1;
+            min-width: 300px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-green), var(--primary-green-dark));
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .report-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+        }
+        .modal-body {
+            padding: 1rem;
+        }
+        @media (max-width: 768px) {
+            .admin-container { flex-direction: column; }
+            .admin-sidebar { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../report-form.html">Report Issue</a></li>
+                <li><a href="../about.html">About</a></li>
+            </ul>
+            <div class="nav-right">
+                <div id="user-info" style="display: flex; align-items: center; gap: 1rem;">
+                    <span id="user-name-display"></span>
+                    <button onclick="logoutAndRedirect()" class="btn btn-sm btn-danger">Logout</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <div class="admin-container">
+            <div class="admin-sidebar">
+                <div class="admin-sidebar-header">
+                    <h3>Admin Panel</h3>
+                    <p id="admin-user-name">Loading...</p>
+                </div>
+                <div class="sidebar-nav">
+                    <a onclick="loadContent('overview', this)" class="active">
+                        <span>📊</span> Overview
+                    </a>
+                    <a onclick="loadContent('sources', this)">
+                        <span>💧</span> Water Sources
+                    </a>
+                    <a onclick="loadContent('tests', this)">
+                        <span>🔬</span> Add Test Results
+                    </a>
+                    <a onclick="loadContent('reports', this)">
+                        <span>📋</span> Moderate Reports
+                        <span id="pendingCount" style="margin-left: auto; background: #ff9800; color: white; padding: 0.125rem 0.5rem; border-radius: 20px; font-size: 0.7rem;">0</span>
+                    </a>
+                    <a onclick="loadContent('users', this)">
+                        <span>👥</span> Manage Users
+                    </a>
+                </div>
+            </div>
+            
+            <div class="admin-content" id="admin-content">
+                <div class="card" style="text-align: center;">
+                    <div class="spinner" style="margin: 50px auto;"></div>
+                    <p>Loading dashboard...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="../js/main.js"></script>
+    <script src="../js/mock-api.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        // Check if user is logged in as admin
+        let currentAdminUser = null;
+        
+        function checkAdminLogin() {
+            const token = localStorage.getItem('auth_token');
+            const userData = localStorage.getItem('current_user');
+            
+            console.log('Checking admin login...');
+            console.log('Token exists:', !!token);
+            console.log('User data:', userData);
+            
+            if (!token || !userData) {
+                console.log('No login data found, redirecting to login');
+                window.location.href = '../login.html';
+                return false;
+            }
+            
+            try {
+                currentAdminUser = JSON.parse(userData);
+                console.log('Parsed user:', currentAdminUser);
+                
+                if (currentAdminUser.role !== 'admin') {
+                    console.log('User is not admin, role:', currentAdminUser.role);
+                    alert('Access denied. Admin privileges required.');
+                    window.location.href = '../dashboard.html';
+                    return false;
+                }
+                
+                console.log('Admin access granted for:', currentAdminUser.name);
+                document.getElementById('admin-user-name').textContent = currentAdminUser.name;
+                document.getElementById('user-name-display').textContent = `👤 ${currentAdminUser.name} (Admin)`;
+                return true;
+                
+            } catch (e) {
+                console.error('Error parsing user data:', e);
+                window.location.href = '../login.html';
+                return false;
+            }
+        }
+        
+        function logoutAndRedirect() {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('current_user');
+            window.location.href = '../login.html';
+        }
+        
+        async function loadContent(page, element) {
+            // Update active state - only if element is provided
+            if (element) {
+                document.querySelectorAll('.sidebar-nav a').forEach(link => {
+                    link.classList.remove('active');
+                });
+                element.classList.add('active');
+            }
+            
+            const contentDiv = document.getElementById('admin-content');
+            contentDiv.innerHTML = '<div class="card" style="text-align: center;"><div class="spinner" style="margin: 50px auto;"></div><p>Loading...</p></div>';
+            
+            switch(page) {
+                case 'overview':
+                    contentDiv.innerHTML = await loadOverview();
+                    break;
+                case 'sources':
+                    contentDiv.innerHTML = await loadSources();
+                    break;
+                case 'tests':
+                    contentDiv.innerHTML = await loadTests();
+                    break;
+                case 'reports':
+                    contentDiv.innerHTML = await loadReports();
+                    break;
+                case 'users':
+                    contentDiv.innerHTML = await loadUsers();
+                    break;
+                default:
+                    contentDiv.innerHTML = await loadOverview();
+            }
+        }
+        
+        async function loadOverview() {
+            try {
+                const sources = await API.get('/sources');
+                const reports = await API.get('/reports');
+                const users = await API.get('/users');
+                
+                const totalSources = sources.data ? sources.data.length : 0;
+                const safeSources = sources.data ? sources.data.filter(s => s.safety_status === 'safe').length : 0;
+                const unsafeSources = sources.data ? sources.data.filter(s => s.safety_status === 'unsafe').length : 0;
+                const pendingReports = reports.data ? reports.data.filter(r => r.status === 'pending').length : 0;
+                const totalUsers = users.data ? users.data.length : 0;
+                
+                // Update pending badge
+                document.getElementById('pendingCount').textContent = pendingReports;
+                
+                // Get recent reports
+                const recentReports = reports.data ? reports.data.slice(0, 5) : [];
+                
+                return `
+                    <div class="card">
+                        <h2>Welcome, ${currentAdminUser.name}!</h2>
+                        <p>Here's what's happening in your system.</p>
+                        
+                        <div class="stats-grid">
+                            <div class="stat-card"><div class="stat-value">${totalSources}</div><div>Total Sources</div></div>
+                            <div class="stat-card" style="background: linear-gradient(135deg, #4caf50, #2e7d32);"><div class="stat-value">${safeSources}</div><div>Safe Sources</div></div>
+                            <div class="stat-card" style="background: linear-gradient(135deg, #f44336, #d32f2f);"><div class="stat-value">${unsafeSources}</div><div>Unsafe Sources</div></div>
+                            <div class="stat-card" style="background: linear-gradient(135deg, #ff9800, #f57c00);"><div class="stat-value">${pendingReports}</div><div>Pending Reports</div></div>
+                            <div class="stat-card" style="background: linear-gradient(135deg, #2196f3, #1976d2);"><div class="stat-value">${totalUsers}</div><div>Total Users</div></div>
+                        </div>
+                        
+                        <h3>Recent Reports</h3>
+                        ${recentReports.length > 0 ? recentReports.map(r => `
+                            <div class="report-card">
+                                <strong>Source #${r.source_id}</strong> - ${getObservationTypeText(r.observation_type)}
+                                <p>${escapeHtml(r.description || 'No description')}</p>
+                                <small>Status: ${r.status} | ${formatDate(r.report_date)}</small>
+                            </div>
+                        `).join('') : '<p>No reports yet</p>'}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading overview:', error);
+                return '<div class="card"><div class="alert alert-danger">Error loading data</div></div>';
+            }
+        }
+        
+        async function loadSources() {
+            try {
+                const sources = await API.get('/sources');
+                const sourceList = sources.data || [];
+                
+                return `
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 1rem;">
+                            <h2>Water Sources</h2>
+                            <button onclick="showAddSourceModal()" class="btn btn-primary">+ Add Source</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead>
+                                    <tr><th>ID</th><th>Name</th><th>Type</th><th>Location</th><th>Status</th><th>Last Tested</th><th>Actions</th> </thead>
+                                <tbody>
+                                    ${sourceList.map(s => `
+                                        <tr>
+                                            <td>${s.id}</td>
+                                            <td><strong>${escapeHtml(s.name)}</strong></td>
+                                            <td>${s.source_type}</td>
+                                            <td>${escapeHtml(s.location_desc)}</td>
+                                            <td><span class="status-badge status-${s.safety_status}">${getStatusText(s.safety_status)}</span></td>
+                                            <td>${formatDate(s.last_test_date)}</td>
+                                            <td><button onclick="deleteSource(${s.id})" class="btn btn-sm btn-danger">Delete</button></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="addSourceModal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3>Add Water Source</h3>
+                                <button class="close-btn" onclick="closeModal('addSourceModal')">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addSourceForm">
+                                    <div class="form-group"><label>Name *</label><input type="text" id="sourceName" class="form-control" required></div>
+                                    <div class="form-group"><label>Location *</label><input type="text" id="sourceLocation" class="form-control" required></div>
+                                    <div class="form-group"><label>Type *</label><select id="sourceType" class="form-control"><option>spring</option><option>well</option><option>tap</option><option>borehole</option></select></div>
+                                    <div class="row"><div class="col"><label>Latitude</label><input type="number" id="sourceLat" class="form-control" step="any" required></div>
+                                    <div class="col"><label>Longitude</label><input type="number" id="sourceLng" class="form-control" step="any" required></div></div>
+                                    <button type="submit" class="btn btn-primary">Add Source</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error loading sources:', error);
+                return '<div class="card"><div class="alert alert-danger">Error loading sources</div></div>';
+            }
+        }
+        
+        async function loadTests() {
+            try {
+                const sources = await API.get('/sources');
+                const sourceList = sources.data || [];
+                
+                return `
+                    <div class="card">
+                        <h2>Add Test Result</h2>
+                        <form id="testForm">
+                            <div class="form-group">
+                                <label>Water Source *</label>
+                                <select id="testSourceId" class="form-control" required>
+                                    <option value="">Select water source</option>
+                                    ${sourceList.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Test Date *</label><input type="date" id="testDate" class="form-control" required></div>
+                            <div class="row">
+                                <div class="col"><div class="form-group"><label>pH Level</label><input type="number" id="testPh" class="form-control" step="0.1" placeholder="6.5 - 8.5"></div></div>
+                                <div class="col"><div class="form-group"><label>Turbidity</label><select id="testTurbidity" class="form-control"><option>Low</option><option>Medium</option><option>High</option></select></div></div>
+                            </div>
+                            <div class="form-group"><label><input type="checkbox" id="testColiform"> Coliform Bacteria Present</label></div>
+                            <div class="form-group"><label>Tested By *</label><input type="text" id="testedBy" class="form-control" required placeholder="MINEE, NGO Name"></div>
+                            <button type="submit" class="btn btn-primary">Submit Test Result</button>
+                        </form>
+                    </div>
+                `;
+            } catch (error) {
+                return '<div class="card"><div class="alert alert-danger">Error loading form</div></div>';
+            }
+        }
+        
+        async function loadReports() {
+            try {
+                const reports = await API.get('/reports');
+                const pendingReports = reports.data ? reports.data.filter(r => r.status === 'pending') : [];
+                const approvedReports = reports.data ? reports.data.filter(r => r.status === 'approved') : [];
+                
+                return `
+                    <div class="card">
+                        <h2>Moderate Reports</h2>
+                        <div class="stats-grid">
+                            <div class="stat-card" style="background: #ff9800;"><div class="stat-value">${pendingReports.length}</div><div>Pending</div></div>
+                            <div class="stat-card" style="background: #4caf50;"><div class="stat-value">${approvedReports.length}</div><div>Approved</div></div>
+                        </div>
+                        
+                        <h3>Pending Reports (${pendingReports.length})</h3>
+                        ${pendingReports.length > 0 ? pendingReports.map(r => `
+                            <div class="report-card">
+                                <strong>Report #${r.id}</strong> - Source #${r.source_id}
+                                <span class="report-type ${r.observation_type}">${getObservationTypeText(r.observation_type)}</span>
+                                <p>${escapeHtml(r.description || 'No description')}</p>
+                                <small>Reported by: ${escapeHtml(r.reporter_name || 'Anonymous')} on ${formatDate(r.report_date)}</small>
+                                <div style="margin-top: 0.5rem;">
+                                    <button onclick="approveReport(${r.id})" class="btn btn-sm btn-primary">✓ Approve</button>
+                                    <button onclick="rejectReport(${r.id})" class="btn btn-sm btn-danger">✗ Reject</button>
+                                </div>
+                            </div>
+                        `).join('') : '<p>No pending reports</p>'}
+                    </div>
+                `;
+            } catch (error) {
+                return '<div class="card"><div class="alert alert-danger">Error loading reports</div></div>';
+            }
+        }
+        
+        async function loadUsers() {
+            try {
+                const users = await API.get('/users');
+                const userList = users.data || [];
+                
+                return `
+                    <div class="card">
+                        <div style="display: flex; justify-content: space-between;">
+                            <h2>Users</h2>
+                            <button onclick="showAddUserModal()" class="btn btn-primary">+ Add User</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="data-table">
+                                <thead> <tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Actions</th></tr> </thead>
+                                <tbody>
+                                    ${userList.map(u => `
+                                        <tr>
+                                            <td>${u.id}</td>
+                                            <td><strong>${escapeHtml(u.name)}</strong></td>
+                                            <td>${u.email}</td>
+                                            <td><span class="role-badge role-${u.role}">${u.role}</span></td>
+                                            <td>${u.created_at}</td>
+                                            <td><button onclick="deleteUser(${u.id})" class="btn btn-sm btn-danger">Delete</button></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="addUserModal" class="modal">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h3>Add User</h3>
+                                <button class="close-btn" onclick="closeModal('addUserModal')">&times;</button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addUserForm">
+                                    <div class="form-group"><label>Name *</label><input type="text" id="userName" class="form-control" required></div>
+                                    <div class="form-group"><label>Email *</label><input type="email" id="userEmail" class="form-control" required></div>
+                                    <div class="form-group"><label>Role *</label><select id="userRole" class="form-control"><option>registered</option><option>health_worker</option><option>data_entry</option><option>admin</option></select></div>
+                                    <div class="form-group"><label>Password *</label><input type="password" id="userPassword" class="form-control" required></div>
+                                    <button type="submit" class="btn btn-primary">Create User</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                return '<div class="card"><div class="alert alert-danger">Error loading users</div></div>';
+            }
+        }
+        
+        // Modal functions
+        function showAddSourceModal() {
+            document.getElementById('addSourceModal').classList.add('active');
+        }
+        
+        function showAddUserModal() {
+            document.getElementById('addUserModal').classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // CRUD operations
+        async function approveReport(id) {
+            const result = await API.put('/reports/moderate', { id, status: 'approved' });
+            if (result.success) {
+                showAlert('Report approved', 'success');
+                loadContent('reports', null);
+                updatePendingCount();
+            }
+        }
+        
+        async function rejectReport(id) {
+            const result = await API.put('/reports/moderate', { id, status: 'rejected' });
+            if (result.success) {
+                showAlert('Report rejected', 'success');
+                loadContent('reports', null);
+                updatePendingCount();
+            }
+        }
+        
+        async function deleteSource(id) {
+            if (confirm('Are you sure you want to delete this water source?')) {
+                const result = await API.delete('/sources', id);
+                if (result.success) {
+                    showAlert('Source deleted', 'success');
+                    loadContent('sources', null);
+                }
+            }
+        }
+        
+        async function deleteUser(id) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                const result = await API.delete('/users', id);
+                if (result.success) {
+                    showAlert('User deleted', 'success');
+                    loadContent('users', null);
+                }
+            }
+        }
+        
+        async function updatePendingCount() {
+            const reports = await API.get('/reports');
+            const pending = reports.data ? reports.data.filter(r => r.status === 'pending').length : 0;
+            document.getElementById('pendingCount').textContent = pending;
+        }
+        
+        // Form handlers
+        document.addEventListener('submit', async (e) => {
+            if (e.target.id === 'addSourceForm') {
+                e.preventDefault();
+                const result = await API.post('/sources', {
+                    name: document.getElementById('sourceName').value,
+                    location_desc: document.getElementById('sourceLocation').value,
+                    source_type: document.getElementById('sourceType').value,
+                    latitude: parseFloat(document.getElementById('sourceLat').value),
+                    longitude: parseFloat(document.getElementById('sourceLng').value)
+                });
+                if (result.success) {
+                    showAlert('Water source added!', 'success');
+                    closeModal('addSourceModal');
+                    loadContent('sources', null);
+                    e.target.reset();
+                } else {
+                    showAlert('Error adding source', 'danger');
+                }
+            }
+            
+            if (e.target.id === 'testForm') {
+                e.preventDefault();
+                const result = await API.post('/tests', {
+                    source_id: document.getElementById('testSourceId').value,
+                    test_date: document.getElementById('testDate').value,
+                    ph_level: document.getElementById('testPh').value,
+                    turbidity: document.getElementById('testTurbidity').value,
+                    coliform_present: document.getElementById('testColiform').checked,
+                    tested_by: document.getElementById('testedBy').value
+                });
+                if (result.success) {
+                    showAlert('Test result added!', 'success');
+                    e.target.reset();
+                } else {
+                    showAlert('Error adding test', 'danger');
+                }
+            }
+            
+            if (e.target.id === 'addUserForm') {
+                e.preventDefault();
+                const result = await API.post('/users', {
+                    name: document.getElementById('userName').value,
+                    email: document.getElementById('userEmail').value,
+                    role: document.getElementById('userRole').value,
+                    password: document.getElementById('userPassword').value
+                });
+                if (result.success) {
+                    showAlert('User created!', 'success');
+                    closeModal('addUserModal');
+                    loadContent('users', null);
+                    e.target.reset();
+                } else {
+                    showAlert('Error creating user', 'danger');
+                }
+            }
+        });
+        
+        // Initialize
+        if (checkAdminLogin()) {
+            loadContent('overview', null);
+            setInterval(updatePendingCount, 30000);
+        }
+        
+        // Make functions global
+        window.loadContent = loadContent;
+        window.showAddSourceModal = showAddSourceModal;
+        window.showAddUserModal = showAddUserModal;
+        window.closeModal = closeModal;
+        window.approveReport = approveReport;
+        window.rejectReport = rejectReport;
+        window.deleteSource = deleteSource;
+        window.deleteUser = deleteUser;
+        window.logoutAndRedirect = logoutAndRedirect;
+    </script>
+</body>
+</html>

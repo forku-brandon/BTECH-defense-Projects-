@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moderate Reports - Admin</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <style>
+        .report-card {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+            background: var(--bg-white);
+        }
+        .report-card:hover {
+            box-shadow: var(--shadow);
+        }
+        .report-card.pending {
+            border-left: 4px solid var(--caution);
+        }
+        .report-card.approved {
+            border-left: 4px solid var(--safe);
+            opacity: 0.7;
+        }
+        .report-card.rejected {
+            border-left: 4px solid var(--unsafe);
+            opacity: 0.5;
+        }
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .report-source {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary-green);
+        }
+        .report-date {
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+        .report-type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+        }
+        .report-description {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: var(--radius-md);
+        }
+        .report-meta {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .filter-btn.active {
+            background: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+        }
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-summary-card {
+            text-align: center;
+            padding: 1rem;
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow);
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-light);
+        }
+        .bulk-actions {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--bg-light);
+            border-radius: var(--radius-md);
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .select-all {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .report-checkbox {
+            margin-right: 1rem;
+        }
+        .photo-thumbnail {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            margin-top: 0.5rem;
+        }
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="../index.html">Home</a></li>
+                <li><a href="../dashboard.html">Dashboard</a></li>
+                <li><a href="../health-dashboard.html">Health Data</a></li>
+                <li><a href="../report-form.html">Report Issue</a></li>
+                <li><a href="dashboard.html" class="active">Admin</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <a href="dashboard.html" class="btn btn-secondary" style="margin-bottom: 1rem;">← Back to Admin Dashboard</a>
+        
+        <div class="card">
+            <h2>📋 Moderate Community Reports</h2>
+            <p>Review and moderate community-submitted water quality reports. Approved reports will appear on the public dashboard.</p>
+            
+            <!-- Stats Summary -->
+            <div class="stats-summary" id="stats-summary">
+                <div class="stat-summary-card">
+                    <div class="stat-number" id="total-reports">0</div>
+                    <div class="stat-label">Total Reports</div>
+                </div>
+                <div class="stat-summary-card" style="border-left: 4px solid var(--caution);">
+                    <div class="stat-number" id="pending-reports">0</div>
+                    <div class="stat-label">Pending Review</div>
+                </div>
+                <div class="stat-summary-card" style="border-left: 4px solid var(--safe);">
+                    <div class="stat-number" id="approved-reports">0</div>
+                    <div class="stat-label">Approved</div>
+                </div>
+                <div class="stat-summary-card" style="border-left: 4px solid var(--unsafe);">
+                    <div class="stat-number" id="rejected-reports">0</div>
+                    <div class="stat-label">Rejected</div>
+                </div>
+            </div>
+            
+            <!-- Filter Tabs -->
+            <div class="filter-tabs">
+                <button class="filter-btn active" data-filter="all" onclick="filterReports('all')">All Reports</button>
+                <button class="filter-btn" data-filter="pending" onclick="filterReports('pending')">Pending Review</button>
+                <button class="filter-btn" data-filter="approved" onclick="filterReports('approved')">Approved</button>
+                <button class="filter-btn" data-filter="rejected" onclick="filterReports('rejected')">Rejected</button>
+            </div>
+            
+            <!-- Bulk Actions -->
+            <div class="bulk-actions" id="bulk-actions" style="display: none;">
+                <div class="select-all">
+                    <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll()">
+                    <label for="select-all-checkbox">Select All</label>
+                </div>
+                <button onclick="bulkApprove()" class="btn btn-sm btn-primary">✓ Approve Selected</button>
+                <button onclick="bulkReject()" class="btn btn-sm btn-danger">✗ Reject Selected</button>
+                <button onclick="bulkDelete()" class="btn btn-sm btn-secondary">🗑️ Delete Selected</button>
+                <span id="selected-count" style="margin-left: auto;">0 selected</span>
+            </div>
+            
+            <!-- Reports List -->
+            <div id="reports-list">
+                <div class="spinner" style="margin: 50px auto;"></div>
+                <p style="text-align: center;">Loading reports...</p>
+            </div>
+            
+            <!-- Pagination -->
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </main>
+    
+    <!-- Image Modal -->
+    <div id="image-modal" class="modal">
+        <div class="modal-content" style="max-width: 90%; max-height: 90%;">
+            <div class="modal-header">
+                <h3>Report Photo</h3>
+                <button class="close-btn" onclick="closeModal('image-modal')">&times;</button>
+            </div>
+            <div class="modal-body" style="text-align: center;">
+                <img id="modal-image" class="modal-image" src="" alt="Report photo">
+            </div>
+        </div>
+    </div>
+    
+    <!-- Edit Report Modal -->
+    <div id="edit-report-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Report</h3>
+                <button class="close-btn" onclick="closeModal('edit-report-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-report-form">
+                    <input type="hidden" id="edit-report-id">
+                    <div class="form-group">
+                        <label>Observation Type</label>
+                        <select id="edit-observation-type" class="form-control">
+                            <option value="clear">Clear Water</option>
+                            <option value="cloudy">Cloudy Water</option>
+                            <option value="bad_smell">Bad Smell</option>
+                            <option value="bad_taste">Bad Taste</option>
+                            <option value="dumping">Waste Dumping</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="edit-description" class="form-control" rows="4"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Reporter Name</label>
+                        <input type="text" id="edit-reporter-name" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="edit-status" class="form-control">
+                            <option value="pending">Pending Review</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="../js/main.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script>
+        let allReports = [];
+        let filteredReports = [];
+        let currentFilter = 'all';
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let selectedReports = new Set();
+        
+        // Check permission
+        if (!hasPermission('moderate_reports')) {
+            window.location.href = '../index.html';
+        }
+        
+        async function loadReports() {
+            try {
+                const result = await API.get('/reports');
+                allReports = result.data;
+                updateStats();
+                applyFilter();
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                document.getElementById('reports-list').innerHTML = '<div class="alert alert-danger">Error loading reports. Please refresh the page.</div>';
+            }
+        }
+        
+        function updateStats() {
+            const total = allReports.length;
+            const pending = allReports.filter(r => r.status === 'pending').length;
+            const approved = allReports.filter(r => r.status === 'approved').length;
+            const rejected = allReports.filter(r => r.status === 'rejected').length;
+            
+            document.getElementById('total-reports').textContent = total;
+            document.getElementById('pending-reports').textContent = pending;
+            document.getElementById('approved-reports').textContent = approved;
+            document.getElementById('rejected-reports').textContent = rejected;
+        }
+        
+        function applyFilter() {
+            if (currentFilter === 'all') {
+                filteredReports = [...allReports];
+            } else {
+                filteredReports = allReports.filter(r => r.status === currentFilter);
+            }
+            
+            // Sort by date (newest first)
+            filteredReports.sort((a, b) => new Date(b.report_date) - new Date(a.report_date));
+            
+            currentPage = 1;
+            selectedReports.clear();
+            updateBulkActionsVisibility();
+            renderReports();
+            renderPagination();
+        }
+        
+        function filterReports(filter) {
+            currentFilter = filter;
+            
+            // Update active button
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.filter === filter) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            applyFilter();
+        }
+        
+        function renderReports() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const pageReports = filteredReports.slice(start, end);
+            
+            if (pageReports.length === 0) {
+                document.getElementById('reports-list').innerHTML = `
+                    <div class="alert alert-info" style="text-align: center;">
+                        No reports found. <a href="../report-form.html">Community members can submit reports here.</a>
+                    </div>
+                `;
+                return;
+            }
+            
+            const reportsHtml = pageReports.map(report => `
+                <div class="report-card ${report.status}" data-report-id="${report.id}">
+                    <div style="display: flex; align-items: flex-start;">
+                        <div class="report-checkbox">
+                            <input type="checkbox" class="report-checkbox-input" data-id="${report.id}" onchange="toggleSelectReport(${report.id})">
+                        </div>
+                        <div style="flex: 1;">
+                            <div class="report-header">
+                                <div>
+                                    <span class="report-source">${escapeHtml(getSourceName(report.source_id))}</span>
+                                    <span class="report-type-badge report-type ${report.observation_type}">${getObservationTypeText(report.observation_type)}</span>
+                                </div>
+                                <div class="report-date">${formatDate(report.report_date)}</div>
+                            </div>
+                            
+                            ${report.description ? `
+                                <div class="report-description">
+                                    ${escapeHtml(report.description)}
+                                </div>
+                            ` : ''}
+                            
+                            ${report.photo_url ? `
+                                <img src="${report.photo_url}" class="photo-thumbnail" onclick="showImage('${report.photo_url}')" alt="Report photo">
+                            ` : ''}
+                            
+                            <div class="report-meta">
+                                <span>📝 Reported by: ${escapeHtml(report.reporter_name || 'Anonymous')}</span>
+                                ${report.reporter_contact ? `<span>📞 Contact: ${escapeHtml(report.reporter_contact)}</span>` : ''}
+                                <span>🆔 Report ID: #${report.id}</span>
+                            </div>
+                            
+                            <div class="action-buttons">
+                                ${report.status === 'pending' ? `
+                                    <button onclick="moderateReport(${report.id}, 'approved')" class="btn btn-sm btn-primary">✓ Approve</button>
+                                    <button onclick="moderateReport(${report.id}, 'rejected')" class="btn btn-sm btn-danger">✗ Reject</button>
+                                ` : ''}
+                                <button onclick="editReport(${report.id})" class="btn btn-sm btn-secondary">✏️ Edit</button>
+                                <button onclick="deleteReport(${report.id})" class="btn btn-sm btn-danger">🗑️ Delete</button>
+                                ${report.status !== 'pending' ? `
+                                    <button onclick="moderateReport(${report.id}, 'pending')" class="btn btn-sm btn-secondary">↩️ Set Pending</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('reports-list').innerHTML = reportsHtml;
+            updateSelectedCount();
+        }
+        
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
+            const paginationDiv = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+            
+            let paginationHtml = '';
+            
+            // Previous button
+            paginationHtml += `<button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>«</button>`;
+            
+            // Page numbers
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    paginationHtml += `<button onclick="changePage(${i})" class="${i === currentPage ? 'active' : ''}">${i}</button>`;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    paginationHtml += `<button disabled>...</button>`;
+                }
+            }
+            
+            // Next button
+            paginationHtml += `<button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>»</button>`;
+            
+            paginationDiv.innerHTML = paginationHtml;
+        }
+        
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredReports.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderReports();
+            renderPagination();
+        }
+        
+        function getSourceName(sourceId) {
+            // This will be populated from the sources list
+            const sources = SAMPLE_DATA?.water_sources || [];
+            const source = sources.find(s => s.id === sourceId);
+            return source ? source.name : `Source #${sourceId}`;
+        }
+        
+        async function moderateReport(reportId, status) {
+            try {
+                const result = await API.put('/reports/moderate', { id: reportId, status });
+                if (result.success) {
+                    showAlert(result.message, 'success');
+                    loadReports();
+                }
+            } catch (error) {
+                showAlert('Error moderating report', 'danger');
+            }
+        }
+        
+        function editReport(reportId) {
+            const report = allReports.find(r => r.id === reportId);
+            if (report) {
+                document.getElementById('edit-report-id').value = report.id;
+                document.getElementById('edit-observation-type').value = report.observation_type;
+                document.getElementById('edit-description').value = report.description || '';
+                document.getElementById('edit-reporter-name').value = report.reporter_name || '';
+                document.getElementById('edit-status').value = report.status;
+                document.getElementById('edit-report-modal').classList.add('active');
+            }
+        }
+        
+        async function deleteReport(reportId) {
+            if (confirm('Are you sure you want to delete this report? This action cannot be undone.')) {
+                try {
+                    const result = await API.delete('/reports', reportId);
+                    if (result.success) {
+                        showAlert(result.message, 'success');
+                        loadReports();
+                    }
+                } catch (error) {
+                    showAlert('Error deleting report', 'danger');
+                }
+            }
+        }
+        
+        function showImage(imageUrl) {
+            document.getElementById('modal-image').src = imageUrl;
+            document.getElementById('image-modal').classList.add('active');
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+        
+        // Bulk actions
+        function toggleSelectAll() {
+            const checkbox = document.getElementById('select-all-checkbox');
+            const reportCheckboxes = document.querySelectorAll('.report-checkbox-input');
+            
+            reportCheckboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+                const reportId = parseInt(cb.dataset.id);
+                if (checkbox.checked) {
+                    selectedReports.add(reportId);
+                } else {
+                    selectedReports.delete(reportId);
+                }
+            });
+            
+            updateSelectedCount();
+        }
+        
+        function toggleSelectReport(reportId) {
+            if (selectedReports.has(reportId)) {
+                selectedReports.delete(reportId);
+            } else {
+                selectedReports.add(reportId);
+            }
+            updateSelectedCount();
+            updateSelectAllCheckbox();
+        }
+        
+        function updateSelectedCount() {
+            document.getElementById('selected-count').textContent = `${selectedReports.size} selected`;
+        }
+        
+        function updateSelectAllCheckbox() {
+            const selectAllCheckbox = document.getElementById('select-all-checkbox');
+            const reportCheckboxes = document.querySelectorAll('.report-checkbox-input');
+            
+            if (reportCheckboxes.length === 0) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+                return;
+            }
+            
+            const allChecked = Array.from(reportCheckboxes).every(cb => cb.checked);
+            const someChecked = Array.from(reportCheckboxes).some(cb => cb.checked);
+            
+            selectAllCheckbox.checked = allChecked;
+            selectAllCheckbox.indeterminate = someChecked && !allChecked;
+        }
+        
+        function updateBulkActionsVisibility() {
+            const bulkActions = document.getElementById('bulk-actions');
+            if (filteredReports.length > 0 && currentFilter === 'pending') {
+                bulkActions.style.display = 'flex';
+            } else {
+                bulkActions.style.display = 'none';
+            }
+        }
+        
+        async function bulkApprove() {
+            if (selectedReports.size === 0) {
+                showAlert('No reports selected', 'warning');
+                return;
+            }
+            
+            if (confirm(`Approve ${selectedReports.size} report(s)?`)) {
+                for (const reportId of selectedReports) {
+                    await moderateReport(reportId, 'approved');
+                }
+                selectedReports.clear();
+                loadReports();
+            }
+        }
+        
+        async function bulkReject() {
+            if (selectedReports.size === 0) {
+                showAlert('No reports selected', 'warning');
+                return;
+            }
+            
+            if (confirm(`Reject ${selectedReports.size} report(s)?`)) {
+                for (const reportId of selectedReports) {
+                    await moderateReport(reportId, 'rejected');
+                }
+                selectedReports.clear();
+                loadReports();
+            }
+        }
+        
+        async function bulkDelete() {
+            if (selectedReports.size === 0) {
+                showAlert('No reports selected', 'warning');
+                return;
+            }
+            
+            if (confirm(`Delete ${selectedReports.size} report(s)? This action cannot be undone.`)) {
+                for (const reportId of selectedReports) {
+                    await deleteReport(reportId);
+                }
+                selectedReports.clear();
+                loadReports();
+            }
+        }
+        
+        // Handle edit form submission
+        document.getElementById('edit-report-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const reportId = parseInt(document.getElementById('edit-report-id').value);
+            const updatedData = {
+                id: reportId,
+                observation_type: document.getElementById('edit-observation-type').value,
+                description: document.getElementById('edit-description').value,
+                reporter_name: document.getElementById('edit-reporter-name').value,
+                status: document.getElementById('edit-status').value
+            };
+            
+            try {
+                const result = await API.put('/reports/update', updatedData);
+                if (result.success) {
+                    showAlert('Report updated successfully', 'success');
+                    closeModal('edit-report-modal');
+                    loadReports();
+                }
+            } catch (error) {
+                showAlert('Error updating report', 'danger');
+            }
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadReports();
+        });
+        
+        // Make functions global for onclick handlers
+        window.filterReports = filterReports;
+        window.moderateReport = moderateReport;
+        window.editReport = editReport;
+        window.deleteReport = deleteReport;
+        window.showImage = showImage;
+        window.closeModal = closeModal;
+        window.changePage = changePage;
+        window.toggleSelectAll = toggleSelectAll;
+        window.toggleSelectReport = toggleSelectReport;
+        window.bulkApprove = bulkApprove;
+        window.bulkReject = bulkReject;
+        window.bulkDelete = bulkDelete;
+    </script>
+</body>
+</html>

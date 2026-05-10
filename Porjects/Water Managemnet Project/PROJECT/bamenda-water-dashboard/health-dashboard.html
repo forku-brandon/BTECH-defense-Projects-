@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Dashboard - Bamenda Water & Health</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .disease-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .disease-card.malaria {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .disease-card.typhoid {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+        .disease-card.diarrhea {
+            background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);
+        }
+        .week-selector {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding: 0.5rem 0;
+        }
+        .week-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border);
+            background: var(--bg-white);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .week-btn.active {
+            background: var(--primary-green);
+            color: white;
+            border-color: var(--primary-green);
+        }
+        .risk-indicator {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .risk-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .risk-high { background: #f44336; }
+        .risk-medium { background: #ffc107; }
+        .risk-low { background: #4caf50; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="health-dashboard.html" class="active">Health Data</a></li>
+                <li><a href="report-form.html">Report Issue</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main class="container">
+        <h1>🏥 Public Health Surveillance</h1>
+        <p>Track disease patterns and correlate with water quality data in Mankon</p>
+        
+        <!-- Disease Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card disease-card">
+                <div class="stat-value" id="total-cases">0</div>
+                <div class="stat-label">Total Weekly Cases</div>
+            </div>
+            <div class="stat-card disease-card malaria">
+                <div class="stat-value" id="malaria-cases">0</div>
+                <div class="stat-label">Malaria Cases</div>
+            </div>
+            <div class="stat-card disease-card typhoid">
+                <div class="stat-value" id="typhoid-cases">0</div>
+                <div class="stat-label">Typhoid Cases</div>
+            </div>
+            <div class="stat-card disease-card diarrhea">
+                <div class="stat-value" id="diarrhea-cases">0</div>
+                <div class="stat-label">Diarrhea Cases</div>
+            </div>
+        </div>
+        
+        <!-- Week Selector -->
+        <div class="card">
+            <h3>Select Week</h3>
+            <div class="week-selector" id="week-selector"></div>
+        </div>
+        
+        <!-- Disease Trend Chart -->
+        <div class="card">
+            <h3>Disease Trends Over Time</h3>
+            <canvas id="disease-chart" style="height: 400px;"></canvas>
+        </div>
+        
+        <!-- Water Quality Correlation -->
+        <div class="card">
+            <h3>Water Quality vs. Waterborne Diseases</h3>
+            <canvas id="correlation-chart" style="height: 400px;"></canvas>
+        </div>
+        
+        <!-- Risk Assessment -->
+        <div class="card">
+            <h3>⚠️ Community Risk Assessment</h3>
+            <div class="row">
+                <div class="col">
+                    <div class="info-item">
+                        <div class="info-label">Overall Risk Level</div>
+                        <div class="info-value" id="risk-level">-</div>
+                        <div class="risk-indicator">
+                            <div id="risk-fill" class="risk-fill" style="width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="info-item">
+                        <div class="info-label">At-Risk Population</div>
+                        <div class="info-value" id="at-risk-population">-</div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="info-item">
+                        <div class="info-label">Recommended Actions</div>
+                        <div class="info-value" id="recommended-actions">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Disease Data Entry Form (for health workers) -->
+        <div id="disease-form-section" style="display: none;" class="card">
+            <h3>📝 Submit Weekly Disease Data</h3>
+            <form id="disease-data-form">
+                <div class="form-group">
+                    <label>Week</label>
+                    <input type="week" id="week" class="form-control" required>
+                </div>
+                <div class="row">
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Typhoid Cases</label>
+                            <input type="number" id="typhoid-cases-input" class="form-control" min="0" required>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Malaria Cases</label>
+                            <input type="number" id="malaria-cases-input" class="form-control" min="0" required>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="form-group">
+                            <label>Diarrhea Cases</label>
+                            <input type="number" id="diarrhea-cases-input" class="form-control" min="0" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="disease-notes" class="form-control" rows="3" placeholder="Any observations about outbreaks, weather conditions, etc."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Data</button>
+            </form>
+        </div>
+        
+        <!-- Health Facilities List -->
+        <div class="card">
+            <h3>🏥 Health Facilities in Mankon</h3>
+            <div class="table-responsive">
+                <table class="data-table" id="facilities-table">
+                    <thead>
+                        <tr>
+                            <th>Facility Name</th>
+                            <th>Weekly Typhoid</th>
+                            <th>Weekly Malaria</th>
+                            <th>Weekly Diarrhea</th>
+                            <th>Status</th>
+                        </thead>
+                        <tbody id="facilities-table-body">
+                            <tr><td colspan="5">Loading...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>⚠️ <strong>Disclaimer:</strong> Health data is simulated for demonstration purposes only.</p>
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="js/main.js"></script>
+<script src="js/mock-api.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/map.js"></script>
+    <script>
+        let diseaseChart, correlationChart;
+        let weeklyData = [];
+        let currentWeekIndex = 6;
+        
+        // Sample disease data
+        const sampleDiseaseData = {
+            weekly: [
+                { week: "Week 1", typhoid: 15, malaria: 65, diarrhea: 12 },
+                { week: "Week 2", typhoid: 18, malaria: 72, diarrhea: 15 },
+                { week: "Week 3", typhoid: 22, malaria: 85, diarrhea: 18 },
+                { week: "Week 4", typhoid: 25, malaria: 92, diarrhea: 22 },
+                { week: "Week 5", typhoid: 20, malaria: 78, diarrhea: 16 },
+                { week: "Week 6", typhoid: 16, malaria: 68, diarrhea: 12 },
+                { week: "Week 7", typhoid: 12, malaria: 58, diarrhea: 9 }
+            ]
+        };
+        
+        // Check permissions and show form for health workers
+        if (hasPermission('submit_disease_data')) {
+            document.getElementById('disease-form-section').style.display = 'block';
+        }
+        
+        async function loadHealthData() {
+            try {
+                const diseaseResult = await API.get('/disease-data');
+                const facilities = await API.get('/health-facilities');
+                const sources = await API.get('/sources');
+                
+                weeklyData = diseaseResult.data.weekly || sampleDiseaseData.weekly;
+                const lastWeek = weeklyData[weeklyData.length - 1];
+                
+                // Update stats
+                document.getElementById('total-cases').textContent = lastWeek.typhoid + lastWeek.malaria + lastWeek.diarrhea;
+                document.getElementById('malaria-cases').textContent = lastWeek.malaria;
+                document.getElementById('typhoid-cases').textContent = lastWeek.typhoid;
+                document.getElementById('diarrhea-cases').textContent = lastWeek.diarrhea;
+                
+                // Initialize week selector
+                initWeekSelector();
+                
+                // Initialize charts
+                initDiseaseChart(weeklyData);
+                initCorrelationChart(weeklyData, sources.data);
+                updateRiskAssessment(weeklyData, sources.data);
+                
+                // Load facilities table
+                loadFacilitiesTable(facilities.data);
+                
+            } catch (error) {
+                console.error('Error loading health data:', error);
+                showAlert('Error loading health data', 'danger');
+            }
+        }
+        
+        function initWeekSelector() {
+            const container = document.getElementById('week-selector');
+            container.innerHTML = weeklyData.map((week, index) => `
+                <button class="week-btn ${index === currentWeekIndex ? 'active' : ''}" onclick="selectWeek(${index})">
+                    ${week.week}
+                </button>
+            `).join('');
+        }
+        
+        function selectWeek(index) {
+            currentWeekIndex = index;
+            const week = weeklyData[index];
+            
+            // Update stats
+            document.getElementById('total-cases').textContent = week.typhoid + week.malaria + week.diarrhea;
+            document.getElementById('malaria-cases').textContent = week.malaria;
+            document.getElementById('typhoid-cases').textContent = week.typhoid;
+            document.getElementById('diarrhea-cases').textContent = week.diarrhea;
+            
+            // Update active state
+            document.querySelectorAll('.week-btn').forEach((btn, i) => {
+                if (i === index) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+        
+        function initDiseaseChart(data) {
+            const ctx = document.getElementById('disease-chart').getContext('2d');
+            const weeks = data.map(w => w.week);
+            const typhoid = data.map(w => w.typhoid);
+            const malaria = data.map(w => w.malaria);
+            const diarrhea = data.map(w => w.diarrhea);
+            
+            if (diseaseChart) diseaseChart.destroy();
+            
+            diseaseChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weeks,
+                    datasets: [
+                        {
+                            label: 'Typhoid Fever',
+                            data: typhoid,
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Malaria',
+                            data: malaria,
+                            borderColor: '#ff9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Diarrhea',
+                            data: diarrhea,
+                            borderColor: '#2196f3',
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { mode: 'index', intersect: false }
+                    }
+                }
+            });
+        }
+        
+        function initCorrelationChart(weeklyData, sources) {
+            const ctx = document.getElementById('correlation-chart').getContext('2d');
+            const weeks = weeklyData.map(w => w.week);
+            const waterborne = weeklyData.map(w => w.typhoid + w.diarrhea);
+            const unsafeCount = sources.filter(s => s.safety_status === 'unsafe').length;
+            const unsafePercentage = weeklyData.map((_, i) => {
+                // Simulate decreasing unsafe sources over time
+                return Math.max(10, 35 - i * 3);
+            });
+            
+            if (correlationChart) correlationChart.destroy();
+            
+            correlationChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: weeks,
+                    datasets: [
+                        {
+                            label: 'Waterborne Disease Cases',
+                            data: waterborne,
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            yAxisID: 'y',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Unsafe Water Sources (%)',
+                            data: unsafePercentage,
+                            borderColor: '#ff9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            yAxisID: 'y1',
+                            tension: 0.4,
+                            fill: true,
+                            borderDash: [5, 5]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: { mode: 'index', intersect: false }
+                    },
+                    scales: {
+                        y: {
+                            title: { display: true, text: 'Number of Cases' },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            position: 'right',
+                            title: { display: true, text: 'Unsafe Sources (%)' },
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { drawOnChartArea: false }
+                        }
+                    }
+                }
+            });
+        }
+        
+        function updateRiskAssessment(weeklyData, sources) {
+            const lastWeek = weeklyData[weeklyData.length - 1];
+            const waterborneTotal = lastWeek.typhoid + lastWeek.diarrhea;
+            const unsafeSources = sources.filter(s => s.safety_status === 'unsafe').length;
+            const cautionSources = sources.filter(s => s.safety_status === 'caution').length;
+            
+            // Calculate risk score (0-100)
+            let riskScore = 0;
+            riskScore += Math.min(40, (waterborneTotal / 50) * 40);
+            riskScore += Math.min(30, (unsafeSources / sources.length) * 30);
+            riskScore += Math.min(30, (cautionSources / sources.length) * 15);
+            
+            let riskLevel = '';
+            let riskClass = '';
+            let recommendedActions = '';
+            
+            if (riskScore >= 70) {
+                riskLevel = 'HIGH RISK';
+                riskClass = 'risk-high';
+                recommendedActions = 'Immediate intervention required. Boil all water. Alert health authorities.';
+            } else if (riskScore >= 40) {
+                riskLevel = 'MEDIUM RISK';
+                riskClass = 'risk-medium';
+                recommendedActions = 'Exercise caution. Monitor water sources. Report any illness.';
+            } else {
+                riskLevel = 'LOW RISK';
+                riskClass = 'risk-low';
+                recommendedActions = 'Continue regular monitoring. Maintain hygiene practices.';
+            }
+            
+            document.getElementById('risk-level').textContent = riskLevel;
+            document.getElementById('risk-fill').className = `risk-fill ${riskClass}`;
+            document.getElementById('risk-fill').style.width = `${riskScore}%`;
+            document.getElementById('at-risk-population').textContent = `~${Math.floor(waterborneTotal * 20)} people`;
+            document.getElementById('recommended-actions').textContent = recommendedActions;
+        }
+        
+        function loadFacilitiesTable(facilities) {
+            const html = facilities.map(f => {
+                const riskLevel = f.demo_data.typhoid + f.demo_data.diarrhea > 20 ? 'High' : 
+                                 f.demo_data.typhoid + f.demo_data.diarrhea > 10 ? 'Medium' : 'Low';
+                return `
+                    <tr>
+                        <td><strong>${escapeHtml(f.name)}</strong></td>
+                        <td>${f.demo_data.typhoid}</td>
+                        <td>${f.demo_data.malaria}</td>
+                        <td>${f.demo_data.diarrhea}</td>
+                        <td><span class="status-badge status-${riskLevel === 'High' ? 'unsafe' : riskLevel === 'Medium' ? 'caution' : 'safe'}">${riskLevel}</span></td>
+                    </tr>
+                `;
+            }).join('');
+            
+            document.getElementById('facilities-table-body').innerHTML = html;
+        }
+        
+        // Handle disease data submission
+        document.getElementById('disease-data-form')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                week: document.getElementById('week').value,
+                typhoid: parseInt(document.getElementById('typhoid-cases-input').value),
+                malaria: parseInt(document.getElementById('malaria-cases-input').value),
+                diarrhea: parseInt(document.getElementById('diarrhea-cases-input').value),
+                notes: document.getElementById('disease-notes').value
+            };
+            
+            try {
+                const result = await API.post('/disease-data', formData);
+                if (result.success) {
+                    showAlert('Disease data submitted successfully!', 'success');
+                    e.target.reset();
+                    loadHealthData();
+                }
+            } catch (error) {
+                showAlert('Error submitting data', 'danger');
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', loadHealthData);
+    </script>
+</body>
+</html>

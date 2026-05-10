@@ -1,0 +1,124 @@
+<!-- pages/gov-login.html - Government Official Login -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Government Login - SSVIAS</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script>
+        // Redirect to the home page
+        window.location.href = 'pages/home.html';
+    </script>
+</head>
+<body>
+        <p>Redirecting to SSVIAS Cameroon Vehicle Security System...</p>
+
+    <div class="mobile-container">
+        <div class="status-bar">
+            <span>👮 Government Portal</span>
+            <span>Secure Access</span>
+        </div>
+        
+        <div class="header gov-card">
+            <h1>🔐 Law Enforcement</h1>
+            <p>Ministry of Transport & Security</p>
+            <div class="cameroon-flag"></div>
+        </div>
+        
+        <div class="main-content">
+            <div id="alert" class="alert"></div>
+            
+            <div class="card">
+                <div class="card-title">Official Verification Code</div>
+                <form id="gov-login-form">
+                    <div class="form-group">
+                        <label>👤 Agency ID</label>
+                        <input type="text" id="agency-id" placeholder="e.g., POLICE001" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔑 Verification Code</label>
+                        <input type="password" id="verification-code" placeholder="Enter 6-digit code" required>
+                        <small>Demo codes: POLICE123, GOV2024, SECURITY456</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🏢 Region</label>
+                        <select id="region">
+                            <option value="NW">North West (Bamenda)</option>
+                            <option value="SW">South West (Buea)</option>
+                            <option value="Littoral">Littoral (Douala)</option>
+                            <option value="Centre">Centre (Yaoundé)</option>
+                            <option value="Adamawa">Adamawa</option>
+                            <option value="West">West</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">🔓 Access Dashboard</button>
+                </form>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Official Access Codes</div>
+                <div class="alert alert-info">
+                    <strong>Demo Codes:</strong><br>
+                    • Police: POLICE123<br>
+                    • Gendarmerie: GEND456<br>
+                    • Transport Ministry: TRANS789<br>
+                    • DGSN: DGSN2024
+                </div>
+            </div>
+        </div>
+        
+        <div class="bottom-nav">
+            <a href="index.html" class="nav-item">🏠 Home</a>
+            <a href="pages/verify-vehicle.html" class="nav-item">🔍 Verify</a>
+            <a href="pages/login.html" class="nav-item">👤 Citizen</a>
+            <a href="pages/gov-login.html" class="nav-item active">👮 Govt</a>
+        </div>
+    </div>
+    
+    <script>
+        const govCodes = {
+            'POLICE123': { role: 'police', name: 'National Police' },
+            'GEND456': { role: 'gendarmerie', name: 'Gendarmerie' },
+            'TRANS789': { role: 'transport', name: 'Transport Ministry' },
+            'DGSN2024': { role: 'dgsn', name: 'DGSN' },
+            'GOV2024': { role: 'government', name: 'Government Official' },
+            'SECURITY456': { role: 'security', name: 'Security Service' }
+        };
+        
+        document.getElementById('gov-login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const agencyId = document.getElementById('agency-id').value;
+            const code = document.getElementById('verification-code').value;
+            const region = document.getElementById('region').value;
+            
+            if (govCodes[code]) {
+                const user = {
+                    id: Date.now(),
+                    name: agencyId,
+                    role: govCodes[code].role,
+                    agency: govCodes[code].name,
+                    region: region,
+                    isGovernment: true
+                };
+                
+                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('govCode', code);
+                
+                showAlert(`Welcome ${govCodes[code].name}! Access granted.`, 'success');
+                setTimeout(() => {
+                    window.location.href = 'gov-dashboard.html';
+                }, 1500);
+            } else {
+                showAlert('Invalid verification code! Please check and try again.', 'danger');
+            }
+        });
+    </script>
+    <script src="/js/api.js"></script>
+    <script src="jp.js"></script>
+</body>
+</html>

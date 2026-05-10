@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Submitted - Bamenda Water & Health Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .success-container {
+            max-width: 600px;
+            margin: 50px auto;
+        }
+        .success-card {
+            text-align: center;
+            background: var(--bg-white);
+            border-radius: var(--radius-lg);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+        .success-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: bounce 0.5s ease;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+        .report-id {
+            background: var(--bg-light);
+            padding: 0.5rem;
+            border-radius: var(--radius-md);
+            font-family: monospace;
+            font-size: 1.1rem;
+            margin: 1rem 0;
+        }
+        .next-steps {
+            text-align: left;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #e8f5e9;
+            border-radius: var(--radius-md);
+        }
+        .share-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        .countdown {
+            margin-top: 2rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">💧</span>
+                <span>Bamenda Water & Health</span>
+            </div>
+            <div class="menu-toggle">☰</div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="health-dashboard.html">Health Data</a></li>
+                <li><a href="report-form.html">Report Issue</a></li>
+            </ul>
+            <div class="user-menu-container"></div>
+        </div>
+    </nav>
+    
+    <main>
+        <div class="success-container">
+            <div class="success-card">
+                <div class="success-icon">✅</div>
+                <h1>Thank You!</h1>
+                <p>Your water quality report has been submitted successfully.</p>
+                
+                <div class="report-id">
+                    Report ID: #<span id="report-id">RPT-2024-001</span>
+                </div>
+                
+                <div class="next-steps">
+                    <strong>📋 What happens next?</strong>
+                    <ul style="margin-top: 0.5rem; margin-left: 1rem;">
+                        <li>Our team will review your report within 24-48 hours</li>
+                        <li>Once approved, it will appear on the water source page</li>
+                        <li>You'll receive a notification when your report is published</li>
+                        <li>Your report helps protect the entire community</li>
+                    </ul>
+                </div>
+                
+                <div class="share-buttons">
+                    <button onclick="shareReport()" class="btn btn-secondary">📤 Share Report</button>
+                    <button onclick="viewReports()" class="btn btn-primary">👁️ View All Reports</button>
+                </div>
+                
+                <div class="countdown">
+                    Redirecting to map in <span id="countdown">5</span> seconds...
+                </div>
+            </div>
+            
+            <div class="card" style="margin-top: 1rem;">
+                <h3>💡 Did You Know?</h3>
+                <p>Community reports have helped identify 15+ water quality issues in the past year, leading to faster response times and improved water safety.</p>
+                <p style="margin-top: 0.5rem;"><strong>Together, we're making a difference!</strong></p>
+            </div>
+        </div>
+    </main>
+    
+    <footer class="footer">
+        <p>&copy; 2024 Bamenda Water & Health Dashboard | Mankon, Bamenda, Cameroon</p>
+    </footer>
+    
+    <script src="js/main.js"></script>
+    <script>
+        // Generate random report ID
+        const reportId = 'RPT-' + new Date().getFullYear() + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+        document.getElementById('report-id').textContent = reportId;
+        
+        // Countdown redirect
+        let seconds = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const interval = setInterval(() => {
+            seconds--;
+            countdownElement.textContent = seconds;
+            
+            if (seconds <= 0) {
+                clearInterval(interval);
+                window.location.href = 'index.html';
+            }
+        }, 1000);
+        
+        function shareReport() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Water Quality Report',
+                    text: `I submitted a water quality report (${reportId}) to the Bamenda Water & Health Dashboard`,
+                    url: window.location.href
+                });
+            } else {
+                showAlert('Share not supported on this browser', 'info');
+            }
+        }
+        
+        function viewReports() {
+            window.location.href = 'dashboard.html?tab=reports';
+        }
+    </script>
+</body>
+</html>
