@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="glow-text"><i class="bi bi-journal-code"></i> Global Access Policies</h2>
+    <button type="button" class="btn btn-primary font-monospace" data-bs-toggle="modal" data-bs-target="#addRuleModal">
+        <i class="bi bi-plus-lg"></i> COMPILE_RULE
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0" width="100%" cellspacing="0">
+                <thead class="font-monospace text-muted small" style="background-color: #0b0f19;">
+                    <tr>
+                        <th class="border-bottom-0 border-top-0">POLICY_NAME</th>
+                        <th class="border-bottom-0 border-top-0 text-center">ACTION</th>
+                        <th class="border-bottom-0 border-top-0">INTF</th>
+                        <th class="border-bottom-0 border-top-0">PROTO</th>
+                        <th class="border-bottom-0 border-top-0">SOURCE</th>
+                        <th class="border-bottom-0 border-top-0">DESTINATION</th>
+                        <th class="border-bottom-0 border-top-0 text-end">EXEC</th>
+                    </tr>
+                </thead>
+                <tbody class="font-monospace">
+                    {% for rule in rules %}
+                    <tr>
+                        <td>
+                            <strong class="text-primary">{{ rule.name }}</strong><br>
+                            <small class="text-muted" style="font-size: 0.75rem;">// {{ rule.description }}</small>
+                        </td>
+                        <td class="text-center align-middle">
+                            {% if rule.action == 'allow' %}
+                                <span class="badge bg-success bg-opacity-25 text-success border border-success w-100">ALLOW</span>
+                            {% else %}
+                                <span class="badge bg-danger bg-opacity-25 text-danger border border-danger w-100">BLOCK</span>
+                            {% endif %}
+                        </td>
+                        <td class="align-middle text-uppercase">{{ rule.interface }}</td>
+                        <td class="align-middle text-info">{{ rule.protocol|upper }}</td>
+                        <td class="align-middle">{{ rule.source_ip }}<span class="text-muted">{% if rule.source_port != 'any' %}:{{ rule.source_port }}{% endif %}</span></td>
+                        <td class="align-middle">{{ rule.dest_ip }}<span class="text-muted">{% if rule.dest_port != 'any' %}:{{ rule.dest_port }}{% endif %}</span></td>
+                        <td class="align-middle text-end">
+                            <form action="{{ url_for('rules.delete', id=rule.id) }}" method="POST" class="d-inline" onsubmit="return confirm('WARNING: Destroying policy from central database. Proceed?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Rule">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-5">No access control lists defined in matrix.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Rule Modal -->
+<div class="modal fade" id="addRuleModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-monospace text-primary"><i class="bi bi-shield-plus"></i> COMPILE_NEW_POLICY</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('rules.add') }}" method="POST">
+          <div class="modal-body font-monospace">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label small text-uppercase text-muted">Rule Identifier</label>
+                    <input type="text" class="form-control" name="name" required placeholder="DROP_MALICIOUS_NET">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-uppercase text-muted">Action</label>
+                    <select class="form-select" name="action" required>
+                        <option value="allow">ALLOW (PASS)</option>
+                        <option value="block">BLOCK (DROP)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small text-uppercase text-muted">Interface</label>
+                    <select class="form-select" name="interface" required>
+                        <option value="wan">WAN</option>
+                        <option value="lan">LAN</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label small text-uppercase text-muted">Protocol</label>
+                    <select class="form-select" name="protocol" required>
+                        <option value="any">ANY</option>
+                        <option value="tcp">TCP</option>
+                        <option value="udp">UDP</option>
+                        <option value="icmp">ICMP</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="card bg-transparent border-primary">
+                        <div class="card-header border-primary py-2 text-primary"><strong>SOURCE_VECTOR</strong></div>
+                        <div class="card-body py-2">
+                            <label class="form-label small text-muted">IP / CIDR (or 'any')</label>
+                            <input type="text" class="form-control form-control-sm mb-2" name="source_ip" value="any">
+                            <label class="form-label small text-muted">Port (or 'any')</label>
+                            <input type="text" class="form-control form-control-sm" name="source_port" value="any">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card bg-transparent border-primary">
+                        <div class="card-header border-primary py-2 text-primary"><strong>TARGET_VECTOR</strong></div>
+                        <div class="card-body py-2">
+                            <label class="form-label small text-muted">IP / CIDR (or 'any')</label>
+                            <input type="text" class="form-control form-control-sm mb-2" name="dest_ip" value="any">
+                            <label class="form-label small text-muted">Port (or 'any')</label>
+                            <input type="text" class="form-control form-control-sm" name="dest_port" value="any">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label small text-uppercase text-muted">Context Notes</label>
+                <input type="text" class="form-control" name="description" placeholder="// Add rationale for security audit...">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">ABORT</button>
+            <button type="submit" class="btn btn-primary">INJECT_POLICY</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

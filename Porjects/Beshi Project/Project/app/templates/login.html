@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="col-md-5">
+        <div class="text-center mb-4">
+            <h1 class="glow-text font-monospace mb-0"><i class="bi bi-shield-lock-fill text-primary"></i> FW_AUTOSYNC</h1>
+            <p class="text-muted font-monospace small">UNAUTHORIZED ACCESS STRICTLY PROHIBITED</p>
+        </div>
+        
+        <div class="card shadow-lg border-primary">
+            <div class="card-header border-primary bg-black text-primary font-monospace py-3">
+                <i class="bi bi-terminal"></i> AUTHENTICATION_REQUIRED
+            </div>
+            <div class="card-body bg-black py-4">
+                <form method="POST" action="{{ url_for('auth.login') }}" class="font-monospace">
+                    <div class="mb-4">
+                        <label for="username" class="form-label text-success small">> IDENTIFIER</label>
+                        <input class="form-control terminal-block border-success text-success" id="username" name="username" type="text" placeholder="root" required autocomplete="off" autofocus />
+                    </div>
+                    <div class="mb-4">
+                        <label for="password" class="form-label text-success small">> PASSPHRASE</label>
+                        <input class="form-control terminal-block border-success text-success" id="password" name="password" type="password" placeholder="••••••••" required autocomplete="off" />
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button class="btn btn-outline-primary fw-bold letter-spacing-1" type="submit">
+                            [ INITIATE_HANDSHAKE ]
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer border-primary bg-black text-center py-3">
+                <div class="small text-muted font-monospace text-uppercase">Sysadmin Credentials: admin / admin123</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

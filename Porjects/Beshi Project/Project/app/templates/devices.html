@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="glow-text"><i class="bi bi-hdd-network"></i> Network Nodes (Firewalls)</h2>
+    <button type="button" class="btn btn-primary font-monospace" data-bs-toggle="modal" data-bs-target="#addDeviceModal">
+        <i class="bi bi-plus-lg"></i> INITIALIZE_NODE
+    </button>
+</div>
+
+<div class="card shadow mb-4">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover mb-0" width="100%" cellspacing="0">
+                <thead class="font-monospace text-muted small" style="background-color: #0b0f19;">
+                    <tr>
+                        <th class="border-bottom-0 border-top-0">NODE_IDENTIFIER</th>
+                        <th class="border-bottom-0 border-top-0">IP_ADDRESS</th>
+                        <th class="border-bottom-0 border-top-0">PORT</th>
+                        <th class="border-bottom-0 border-top-0">STATUS</th>
+                        <th class="border-bottom-0 border-top-0 text-end">COMMANDS</th>
+                    </tr>
+                </thead>
+                <tbody class="font-monospace">
+                    {% for device in devices %}
+                    <tr>
+                        <td class="text-primary">{{ device.name }}</td>
+                        <td>{{ device.host }}</td>
+                        <td class="text-muted">{{ device.port }}</td>
+                        <td>
+                            {% if device.is_active %}
+                                <span class="badge bg-success bg-opacity-25 text-success border border-success">ONLINE</span>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary">OFFLINE</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('devices.test_connection', id=device.id) }}" class="btn btn-sm btn-outline-info" title="Ping API">
+                                <i class="bi bi-broadcast"></i>
+                            </a>
+                            <form action="{{ url_for('devices.delete', id=device.id) }}" method="POST" class="d-inline" onsubmit="return confirm('WARNING: Terminating this node connection. Proceed?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove Node">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-5">No nodes currently linked to central command.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Add Device Modal -->
+<div class="modal fade" id="addDeviceModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title font-monospace text-primary"><i class="bi bi-terminal-plus"></i> NODE_REGISTRATION</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form action="{{ url_for('devices.add') }}" method="POST">
+          <div class="modal-body font-monospace">
+            <div class="mb-3">
+                <label for="name" class="form-label small text-uppercase">Node Designation</label>
+                <input type="text" class="form-control" id="name" name="name" required placeholder="e.g. FW-DATACENTER-01">
+            </div>
+            <div class="mb-3">
+                <label for="host" class="form-label small text-uppercase">IPv4 / Hostname</label>
+                <input type="text" class="form-control" id="host" name="host" required placeholder="192.168.1.1">
+                <div class="form-text text-muted">Use "mock_test" to bypass physical connection.</div>
+            </div>
+            <div class="mb-3">
+                <label for="port" class="form-label small text-uppercase">Management Port</label>
+                <input type="number" class="form-control" id="port" name="port" value="443" required>
+            </div>
+            <div class="mb-3">
+                <label for="api_key" class="form-label small text-uppercase">API Auth Token</label>
+                <input type="password" class="form-control" id="api_key" name="api_key" required>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">ABORT</button>
+            <button type="submit" class="btn btn-primary">EXECUTE LINK</button>
+          </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

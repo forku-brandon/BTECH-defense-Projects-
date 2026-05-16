@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="glow-text mb-0"><i class="bi bi-rocket-takeoff"></i> Policy Enforcement Matrix</h2>
+        <p class="text-muted font-monospace small mb-0">SYNC_STATUS: MONITORING ALL NODES</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for device in devices %}
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow h-100">
+            <div class="card-header d-flex justify-content-between align-items-center border-bottom border-primary">
+                <h5 class="m-0 font-monospace text-primary"><i class="bi bi-hdd-network me-2"></i> {{ device.name }}</h5>
+                <form action="{{ url_for('deploy.sync_device', device_id=device.id) }}" method="POST" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-primary font-monospace">
+                        <i class="bi bi-arrow-repeat"></i> FORCE_SYNC
+                    </button>
+                </form>
+            </div>
+            <div class="card-body p-0">
+                <div class="bg-black p-2 border-bottom border-secondary">
+                    <div class="small font-monospace text-muted">TARGET_IP: {{ device.host }}:{{ device.port }}</div>
+                </div>
+                
+                {% if rules %}
+                <ul class="list-group list-group-flush font-monospace">
+                    {% for rule in rules %}
+                        {% set status = status_map[rule.id][device.id] %}
+                        <li class="list-group-item px-3 py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom border-secondary">
+                            <div>
+                                <span class="fw-bold text-light">{{ rule.name }}</span><br>
+                                <small class="text-muted">ACTION: {{ rule.action|upper }} | INTF: {{ rule.interface|upper }}</small>
+                            </div>
+                            <div class="d-flex align-items-center">
+                                {% if status == 'success' %}
+                                    <span class="badge bg-success bg-opacity-25 text-success border border-success me-3"><i class="bi bi-check-circle"></i> SYNCED</span>
+                                {% elif status == 'failed' %}
+                                    <span class="badge bg-danger bg-opacity-25 text-danger border border-danger me-3"><i class="bi bi-x-circle"></i> FAILED</span>
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary me-3">PENDING</span>
+                                {% endif %}
+                                
+                                <form action="{{ url_for('deploy.deploy_single', rule_id=rule.id, device_id=device.id) }}" method="POST">
+                                    <button type="submit" class="btn btn-sm btn-primary" {% if status == 'success' %}title="Re-deploy"{% else %}title="Deploy"{% endif %}>
+                                        <i class="bi bi-cloud-arrow-up"></i> PUSH
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted font-monospace text-center py-4 mb-0">No global policies defined in central repository.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5 font-monospace">
+        <h5 class="text-muted"><i class="bi bi-exclamation-triangle"></i> NO ACTIVE NODES DETECTED.</h5>
+        <a href="{{ url_for('devices.index') }}" class="btn btn-outline-primary mt-3">INITIALIZE_NODE</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
