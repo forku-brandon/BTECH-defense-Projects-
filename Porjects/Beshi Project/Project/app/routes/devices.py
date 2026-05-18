@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from flask_login import login_required
 from app import db
 from app.models import Device
@@ -21,27 +21,33 @@ def add():
     host = request.form.get('host')
     port = request.form.get('port', 443, type=int)
     api_key = request.form.get('api_key')
-    
-    if not all([name, host, api_key]):
-        flash('Name, host, and API key are required.', 'danger')
+    simulation_mode = request.form.get('simulation') == 'on' or not host or current_app.config.get('SIMULATION_MODE', False)
+
+    if simulation_mode:
+        host = f"mock-{name}".lower().replace(' ', '_')
+        port = 443
+
+    if not name or not api_key:
+        flash('Name and API key are required.', 'danger')
         return redirect(url_for('devices.index'))
-        
+
     encrypted_key = encrypt_api_key(api_key)
     new_device = Device(name=name, host=host, port=port, api_key=encrypted_key)
     
-    # Test connection before saving
     client = PfSenseClient(new_device)
-    success, msg = client.check_connection()
+    if not simulation_mode:
+        success, msg = client.check_connection()
+        if not success:
+            flash(f'Device connection failed: {msg}. Please check the details and try again.', 'danger')
+            return redirect(url_for('devices.index'))
+    else:
+        success, msg = True, 'Simulation node saved without live connection test.'
     
-    if not success:
-        flash(f'Device connection failed: {msg}. Please check the details and try again.', 'danger')
-        return redirect(url_for('devices.index'))
-        
     db.session.add(new_device)
     db.session.commit()
-    log_action('DEVICE_ADDED', {'device_id': new_device.id, 'name': new_device.name})
+    log_action('DEVICE_ADDED', {'device_id': new_device.id, 'name': new_device.name, 'simulation': simulation_mode})
     flash('Device added successfully.', 'success')
-    return redirect(url_for('devices.index'))
+    return redirect(url_for('simulation.index', event='device_added', item=new_device.name))
 
 @devices_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required

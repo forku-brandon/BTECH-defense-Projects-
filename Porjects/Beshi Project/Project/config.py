@@ -11,8 +11,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # API Settings
-    API_TIMEOUT = 5  # seconds
-    API_RETRY_COUNT = 1
+    API_TIMEOUT = int(os.environ.get('API_TIMEOUT', 5))  # seconds
+    API_RETRY_COUNT = int(os.environ.get('API_RETRY_COUNT', 1))
+    SIMULATION_MODE = os.environ.get('SIMULATION_MODE', 'false').lower() in ('1', 'true', 'yes')
     
     # Encryption key for API keys (32 url-safe base64-encoded bytes)
     # Generate in production using: cryptography.fernet.Fernet.generate_key()

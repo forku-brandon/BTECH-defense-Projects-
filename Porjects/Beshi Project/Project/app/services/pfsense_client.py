@@ -12,10 +12,10 @@ class PfSenseClient:
             "X-API-Key": self.api_key,
             "Content-Type": "application/json"
         }
-        self.timeout = 5
+        self.timeout = current_app.config.get('API_TIMEOUT', 5)
         
-        # If host starts with 'mock', enable mock mode
-        self.mock_mode = self.device.host.lower().startswith('mock')
+        app_simulation = current_app.config.get('SIMULATION_MODE', False)
+        self.mock_mode = app_simulation or self.device.host.lower().startswith('mock')
 
     def check_connection(self):
         """Check if the device is reachable and API key is valid."""

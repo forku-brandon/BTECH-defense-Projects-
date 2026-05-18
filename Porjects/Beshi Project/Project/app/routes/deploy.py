@@ -7,6 +7,10 @@ from app.services.policy_engine import deploy_rule_to_device, sync_all_pending_r
 
 deploy_bp = Blueprint('deploy', __name__)
 
+
+def is_simulation_device(device):
+    return str(device.host).lower().startswith('mock-')
+
 @deploy_bp.route('/')
 @login_required
 def index():
@@ -38,7 +42,10 @@ def deploy_single(rule_id, device_id):
         flash(f'Rule "{rule.name}" successfully deployed to {device.name}', 'success')
     else:
         flash(f'Failed to deploy rule to {device.name}: {msg}', 'danger')
-        
+
+    if is_simulation_device(device):
+        return redirect(url_for('simulation.index', event='rule_deployed', item=f'{rule.name} to {device.name}'))
+
     return redirect(url_for('deploy.index'))
 
 @deploy_bp.route('/sync/<int:device_id>', methods=['POST'])
@@ -56,4 +63,7 @@ def sync_device(device_id):
         flash(f'Sync complete for {device.name}: {success_count} succeeded, {fail_count} failed.', 
               'success' if fail_count == 0 else 'warning')
               
+    if is_simulation_device(device):
+        return redirect(url_for('simulation.index', event='sync_complete', item=device.name))
+
     return redirect(url_for('deploy.index'))

@@ -1,0 +1,966 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="glow-text"><i class="bi bi-shield-shaded"></i> LIVE FIREWALL SIMULATION</h2>
+        <p class="text-muted font-monospace small mb-0">Real-time visualization of policy propagation across distributed firewall nodes</p>
+    </div>
+    <div class="d-flex gap-2">
+        <button id="resetSimulation" class="btn btn-outline-warning font-monospace">
+            <i class="bi bi-arrow-repeat"></i> RESET
+        </button>
+        <a href="{{ url_for('devices.index') }}" class="btn btn-outline-secondary font-monospace">
+            <i class="bi bi-arrow-left-circle"></i> BACK_TO_NODES
+        </a>
+    </div>
+</div>
+
+<div class="row gx-4">
+    <div class="col-xl-8">
+        <!-- Main Visualization Canvas -->
+        <div class="simulation-stage card shadow" style="background: linear-gradient(135deg, #0a0e27 0%, #0a0f2a 100%);">
+            <div class="stage-header p-3 border-bottom border-primary">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-info bg-opacity-15 text-info pulse-badge">
+                            <i class="bi bi-broadcast"></i> LIVE_NETWORK
+                        </span>
+                        {% if simulation_mode %}
+                        <span class="badge bg-warning bg-opacity-15 text-warning ms-2">
+                            <i class="bi bi-motherboard-fill"></i> SIMULATION_MODE
+                        </span>
+                        {% endif %}
+                        {% if event %}
+                        <span class="badge bg-success bg-opacity-15 text-success ms-2 animate-pulse">
+                            <i class="bi bi-lightning-charge-fill"></i> {{ event.replace('_', ' ')|upper }}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary bg-opacity-15 text-secondary ms-2">
+                            <i class="bi bi-circle"></i> MONITORING
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div id="liveTimestamp" class="font-monospace small text-info"></div>
+                </div>
+            </div>
+            
+            <div class="stage-grid p-4" style="min-height: 600px; position: relative;">
+                <!-- SVG Layer for Connections -->
+                <svg id="connectionLines" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
+                    <defs>
+                        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:0.3" />
+                            <stop offset="100%" style="stop-color:#00d4ff;stop-opacity:0.8" />
+                        </linearGradient>
+                        <filter id="glow">
+                            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                            <feMerge>
+                                <feMergeNode in="coloredBlur"/>
+                                <feMergeNode in="SourceGraphic"/>
+                            </feMerge>
+                        </filter>
+                    </defs>
+                </svg>
+
+                <!-- Firewall Nodes -->
+                <div class="nodes-container" style="position: relative; z-index: 2;">
+                    {% for device in devices %}
+                    <div class="firewall-node-card" data-device-id="{{ device.id }}" data-device-name="{{ device.name }}" data-device-host="{{ device.host }}" data-x="{{ 50 + loop.index0 * 30 }}" data-y="{{ 150 + (loop.index0 % 3) * 120 }}" style="position: absolute;">
+                        <div class="node-glow"></div>
+                        <div class="node-content">
+                            <div class="node-status-indicator">
+                                <span class="status-dot online"></span>
+                            </div>
+                            <div class="node-icon">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <div class="node-info">
+                                <div class="node-name">{{ device.name }}{% if device.host.startswith('mock-') %} <span class="badge bg-info bg-opacity-15 text-info ms-1">SIM</span>{% endif %}</div>
+                                <div class="node-address">{{ device.host }}:{{ device.port }}</div>
+                            </div>
+                            <div class="node-stats">
+                                <div class="stat-item">
+                                    <span class="stat-value" id="rules-count-{{ device.id }}">0</span>
+                                    <span class="stat-label">rules</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-value" id="status-{{ device.id }}">●</span>
+                                    <span class="stat-label">active</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="packet-receiver"></div>
+                    </div>
+                    {% else %}
+                    <div class="text-muted text-center py-4">No active firewall nodes available.</div>
+                    {% endfor %}
+                </div>
+
+                <!-- Policy Zone -->
+                <div class="policy-zone" style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3;">
+                    <div class="policy-core">
+                        <div class="core-pulse"></div>
+                        <div class="policy-icon">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <div class="policy-label">POLICY ENGINE</div>
+                    </div>
+                </div>
+
+                <!-- Animated Packet Layer -->
+                <canvas id="packetCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4;"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <!-- Real-time Event Log -->
+        <div class="card shadow simulation-log-card">
+            <div class="card-header border-bottom border-primary bg-dark">
+                <h5 class="m-0 font-monospace text-primary">
+                    <i class="bi bi-activity"></i> REAL-TIME EVENT STREAM
+                </h5>
+            </div>
+            <div class="card-body p-0" style="height: 400px; overflow-y: auto;">
+                <ul class="list-group list-group-flush simulation-log" id="simulationLog">
+                    <li class="list-group-item terminal-block">
+                        <span class="text-success">⟩ SYSTEM</span> Simulation engine initialized
+                    </li>
+                    <li class="list-group-item terminal-block">
+                        <span class="text-info">⟩ NETWORK</span> Monitoring {{ devices|length }} firewall nodes
+                    </li>
+                    <li class="list-group-item terminal-block">
+                        <span class="text-info">⟩ POLICY</span> {{ rules|length }} active policies loaded
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Active Policies -->
+        <div class="card shadow mt-3">
+            <div class="card-header bg-dark border-bottom border-info">
+                <h6 class="m-0 font-monospace text-info">
+                    <i class="bi bi-file-text"></i> ACTIVE POLICIES
+                </h6>
+            </div>
+            <div class="card-body p-2" style="max-height: 250px; overflow-y: auto;">
+                {% for rule in rules %}
+                <div class="rule-item {{ 'allow' if rule.action == 'allow' else 'block' }} mb-2 p-2 rounded" data-rule-id="{{ rule.id }}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="rule-name small fw-bold">{{ rule.name }}</div>
+                        <div class="rule-action">
+                            <span class="badge {{ 'bg-success' if rule.action == 'allow' else 'bg-danger' }}">{{ rule.action|upper }}</span>
+                        </div>
+                    </div>
+                    <div class="rule-details small text-muted">
+                        {{ rule.protocol|upper }} | {{ rule.source_ip }} → {{ rule.dest_ip }} {% if rule.dest_port and rule.dest_port != 'any' %}:{{ rule.dest_port }}{% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-muted text-center py-3">No policies configured</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Performance Metrics -->
+        <div class="card shadow mt-3">
+            <div class="card-body">
+                <canvas id="metricsChart" width="100%" height="100" style="max-height: 100px;"></canvas>
+                <div class="d-flex justify-content-between mt-2">
+                    <div class="text-center">
+                        <div class="small text-muted">Latency</div>
+                        <div class="font-monospace text-info" id="latencyMetric">0ms</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="small text-muted">Throughput</div>
+                        <div class="font-monospace text-info" id="throughputMetric">0 p/s</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="small text-muted">Success Rate</div>
+                        <div class="font-monospace text-info" id="successMetric">100%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// ============================================
+// REAL-TIME SIMULATION ENGINE
+// ============================================
+
+class FirewallSimulation {
+    constructor() {
+        this.devices = [];
+        this.policies = [];
+        this.activePackets = [];
+        this.packetQueue = [];
+        this.animationFrame = null;
+        this.lastTimestamp = Date.now();
+        this.metrics = {
+            packetsSent: 0,
+            packetsReceived: 0,
+            latency: 0,
+            throughput: 0
+        };
+        
+        this.init();
+    }
+    
+    init() {
+        this.loadDevices();
+        this.loadPolicies();
+        this.setupCanvas();
+        this.startAnimation();
+        this.startMetricsUpdate();
+        this.startRandomEvents();
+        this.updateTimestamp();
+        
+        // Setup reset button
+        document.getElementById('resetSimulation').addEventListener('click', () => this.reset());
+    }
+    
+    loadDevices() {
+        const deviceElements = document.querySelectorAll('.firewall-node-card');
+        deviceElements.forEach((el, index) => {
+            if (el.dataset.x && el.dataset.y) {
+                el.style.left = `${el.dataset.x}px`;
+                el.style.top = `${el.dataset.y}px`;
+            }
+            const rect = el.getBoundingClientRect();
+            const containerRect = document.querySelector('.stage-grid').getBoundingClientRect();
+            
+            this.devices.push({
+                id: el.dataset.deviceId,
+                name: el.dataset.deviceName,
+                host: el.dataset.deviceHost,
+                element: el,
+                x: rect.left - containerRect.left + rect.width/2,
+                y: rect.top - containerRect.top + rect.height/2,
+                status: 'online',
+                rules: [],
+                lastPacket: null,
+                glowIntensity: 0
+            });
+            
+            // Add click handler for device interaction
+            el.addEventListener('click', () => this.showDeviceInfo(el.dataset.deviceId));
+        });
+        
+        this.drawConnections();
+    }
+    
+    loadPolicies() {
+        const policyElements = document.querySelectorAll('.rule-item');
+        policyElements.forEach(el => {
+            this.policies.push({
+                id: el.dataset.ruleId,
+                action: el.classList.contains('allow') ? 'allow' : 'block',
+                element: el
+            });
+        });
+    }
+    
+    setupCanvas() {
+        this.canvas = document.getElementById('packetCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.resizeCanvas();
+        window.addEventListener('resize', () => this.resizeCanvas());
+    }
+    
+    resizeCanvas() {
+        const container = document.querySelector('.stage-grid');
+        this.canvas.width = container.clientWidth;
+        this.canvas.height = container.clientHeight;
+        this.canvas.style.width = `${container.clientWidth}px`;
+        this.canvas.style.height = `${container.clientHeight}px`;
+        this.drawConnections();
+    }
+    
+    drawConnections() {
+        const svg = document.getElementById('connectionLines');
+        svg.innerHTML = '';
+        
+        const container = document.querySelector('.stage-grid');
+        const containerRect = container.getBoundingClientRect();
+        const policyCore = document.querySelector('.policy-core');
+        const policyRect = policyCore.getBoundingClientRect();
+        const centerX = policyRect.left - containerRect.left + policyRect.width/2;
+        const centerY = policyRect.top - containerRect.top + policyRect.height/2;
+        
+        this.devices.forEach(device => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', centerX);
+            line.setAttribute('y1', centerY);
+            line.setAttribute('x2', device.x);
+            line.setAttribute('y2', device.y);
+            line.setAttribute('stroke', 'url(#lineGradient)');
+            line.setAttribute('stroke-width', '2');
+            line.setAttribute('stroke-dasharray', '5,5');
+            line.setAttribute('opacity', '0.6');
+            svg.appendChild(line);
+        });
+    }
+    
+    startAnimation() {
+        const animate = () => {
+            this.updatePackets();
+            this.renderPackets();
+            this.updateDeviceGlows();
+            this.animationFrame = requestAnimationFrame(animate);
+        };
+        animate();
+    }
+    
+    updatePackets() {
+        // Move existing packets
+        for (let i = 0; i < this.activePackets.length; i++) {
+            const packet = this.activePackets[i];
+            const progress = (Date.now() - packet.startTime) / packet.duration;
+            
+            if (progress >= 1) {
+                // Packet arrived at destination
+                this.onPacketArrival(packet);
+                this.activePackets.splice(i, 1);
+                i--;
+            } else {
+                // Update packet position
+                packet.progress = progress;
+                packet.x = packet.startX + (packet.endX - packet.startX) * progress;
+                packet.y = packet.startY + (packet.endY - packet.startY) * progress;
+            }
+        }
+        
+        // Generate new packets from queue
+        while (this.packetQueue.length > 0 && this.activePackets.length < 15) {
+            this.spawnPacket(this.packetQueue.shift());
+        }
+    }
+    
+    spawnPacket(policyId) {
+        const policyCore = document.querySelector('.policy-core');
+        const container = document.querySelector('.stage-grid');
+        const containerRect = container.getBoundingClientRect();
+        const policyRect = policyCore.getBoundingClientRect();
+        const centerX = policyRect.left - containerRect.left + policyRect.width/2;
+        const centerY = policyRect.top - containerRect.top + policyRect.height/2;
+        
+        // Select random target device
+        const targetDevice = this.devices[Math.floor(Math.random() * this.devices.length)];
+        
+        this.activePackets.push({
+            id: Date.now() + Math.random(),
+            startX: centerX,
+            startY: centerY,
+            endX: targetDevice.x,
+            endY: targetDevice.y,
+            startTime: Date.now(),
+            duration: 800 + Math.random() * 400,
+            progress: 0,
+            targetDevice: targetDevice,
+            type: Math.random() > 0.3 ? 'policy' : 'heartbeat',
+            policyId: policyId
+        });
+        
+        this.metrics.packetsSent++;
+        this.updateMetrics();
+    }
+    
+    onPacketArrival(packet) {
+        const device = packet.targetDevice;
+        device.lastPacket = Date.now();
+        device.glowIntensity = 1.0;
+        
+        this.metrics.packetsReceived++;
+        
+        // Update device stats
+        const rulesCountEl = document.getElementById(`rules-count-${device.id}`);
+        if (rulesCountEl) {
+            let currentCount = parseInt(rulesCountEl.innerText) || 0;
+            rulesCountEl.innerText = currentCount + 1;
+        }
+        
+        // Animate device
+        device.element.classList.add('packet-received');
+        setTimeout(() => {
+            device.element.classList.remove('packet-received');
+        }, 500);
+        
+        // Add to log
+        this.addLogEntry(
+            `PACKET_ARRIVED`,
+            `${device.name} received ${packet.type} update`,
+            'success'
+        );
+        
+        // Flash the connection line
+        this.flashConnection(device);
+        
+        // Update policy status
+        if (packet.policyId) {
+            this.updatePolicyStatus(packet.policyId);
+        }
+        
+        // Calculate latency
+        const latency = Date.now() - packet.startTime;
+        this.metrics.latency = Math.floor(this.metrics.latency * 0.7 + latency * 0.3);
+    }
+    
+    flashConnection(device) {
+        const container = document.querySelector('.stage-grid');
+        const containerRect = container.getBoundingClientRect();
+        const policyCore = document.querySelector('.policy-core');
+        const policyRect = policyCore.getBoundingClientRect();
+        
+        const svg = document.getElementById('connectionLines');
+        const lines = svg.querySelectorAll('line');
+        
+        lines.forEach(line => {
+            const x2 = parseFloat(line.getAttribute('x2'));
+            const y2 = parseFloat(line.getAttribute('y2'));
+            
+            if (Math.abs(x2 - device.x) < 10 && Math.abs(y2 - device.y) < 10) {
+                line.setAttribute('stroke', '#00ff88');
+                line.setAttribute('stroke-width', '4');
+                setTimeout(() => {
+                    line.setAttribute('stroke', 'url(#lineGradient)');
+                    line.setAttribute('stroke-width', '2');
+                }, 300);
+            }
+        });
+    }
+    
+    updateDeviceGlows() {
+        this.devices.forEach(device => {
+            if (device.glowIntensity > 0) {
+                device.glowIntensity *= 0.95;
+                const glowElement = device.element.querySelector('.node-glow');
+                if (glowElement) {
+                    glowElement.style.opacity = device.glowIntensity * 0.5;
+                    glowElement.style.transform = `scale(${1 + device.glowIntensity * 0.3})`;
+                }
+            }
+        });
+    }
+    
+    renderPackets() {
+        if (!this.ctx) return;
+        
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        this.activePackets.forEach(packet => {
+            // Draw packet glow
+            this.ctx.shadowBlur = 10;
+            this.ctx.shadowColor = packet.type === 'policy' ? '#00d4ff' : '#ff6b6b';
+            
+            // Draw packet circle
+            this.ctx.beginPath();
+            this.ctx.arc(packet.x, packet.y, 6, 0, Math.PI * 2);
+            
+            const gradient = this.ctx.createLinearGradient(
+                packet.x - 4, packet.y - 4, packet.x + 4, packet.y + 4
+            );
+            
+            if (packet.type === 'policy') {
+                gradient.addColorStop(0, '#00d4ff');
+                gradient.addColorStop(1, '#0099ff');
+            } else {
+                gradient.addColorStop(0, '#ff6b6b');
+                gradient.addColorStop(1, '#ff4444');
+            }
+            
+            this.ctx.fillStyle = gradient;
+            this.ctx.fill();
+            
+            // Draw inner icon
+            this.ctx.fillStyle = 'white';
+            this.ctx.font = 'bold 8px "Font Awesome 6 Free"';
+            this.ctx.shadowBlur = 0;
+            this.ctx.fillText(
+                packet.type === 'policy' ? '📋' : '❤️',
+                packet.x - 4,
+                packet.y + 3
+            );
+            
+            // Draw trail
+            this.ctx.beginPath();
+            this.ctx.moveTo(packet.x - 8, packet.y);
+            this.ctx.lineTo(packet.x - 16, packet.y);
+            this.ctx.strokeStyle = packet.type === 'policy' ? '#00d4ff' : '#ff6b6b';
+            this.ctx.lineWidth = 2;
+            this.ctx.stroke();
+        });
+        
+        this.ctx.shadowBlur = 0;
+    }
+    
+    addLogEntry(type, message, level = 'info') {
+        const logContainer = document.getElementById('simulationLog');
+        const entry = document.createElement('li');
+        entry.className = 'list-group-item terminal-block animate-slide-in';
+        
+        const timestamp = new Date().toLocaleTimeString();
+        let icon = '⟩';
+        let color = 'text-info';
+        
+        switch(level) {
+            case 'success':
+                icon = '✓';
+                color = 'text-success';
+                break;
+            case 'warning':
+                icon = '⚠';
+                color = 'text-warning';
+                break;
+            case 'error':
+                icon = '✗';
+                color = 'text-danger';
+                break;
+            default:
+                icon = '⟩';
+                color = 'text-info';
+        }
+        
+        entry.innerHTML = `
+            <span class="${color} font-monospace">[${timestamp}] ${icon}</span>
+            <span class="text-light ms-2">${message}</span>
+        `;
+        
+        logContainer.insertBefore(entry, logContainer.firstChild);
+        
+        // Limit log entries
+        while (logContainer.children.length > 50) {
+            logContainer.removeChild(logContainer.lastChild);
+        }
+        
+        // Auto-scroll
+        logContainer.scrollTop = 0;
+    }
+    
+    updatePolicyStatus(policyId) {
+        const policyElement = document.querySelector(`.rule-item[data-rule-id="${policyId}"]`);
+        if (policyElement) {
+            policyElement.classList.add('policy-updated');
+            setTimeout(() => {
+                policyElement.classList.remove('policy-updated');
+            }, 500);
+        }
+    }
+    
+    showDeviceInfo(deviceId) {
+        const device = this.devices.find(d => d.id === deviceId);
+        if (device) {
+            this.addLogEntry(
+                `DEVICE_INFO`,
+                `${device.name} - Status: ${device.status}, Rules: ${device.rules.length}`,
+                'info'
+            );
+            
+            // Trigger device highlight
+            device.element.classList.add('highlight');
+            setTimeout(() => {
+                device.element.classList.remove('highlight');
+            }, 1000);
+        }
+    }
+    
+    startRandomEvents() {
+        // Simulate random policy deployments
+        setInterval(() => {
+            if (this.policies.length > 0 && Math.random() > 0.7) {
+                const randomPolicy = this.policies[Math.floor(Math.random() * this.policies.length)];
+                this.triggerPolicyDeployment(randomPolicy.id);
+            }
+        }, 3000);
+        
+        // Simulate heartbeat checks
+        setInterval(() => {
+            this.triggerHeartbeatCheck();
+        }, 5000);
+    }
+    
+    triggerPolicyDeployment(policyId) {
+        const policy = this.policies.find(p => p.id == policyId);
+        if (policy) {
+            this.addLogEntry(
+                `POLICY_DEPLOY`,
+                `Deploying ${policy.action} policy to all firewalls`,
+                'info'
+            );
+            
+            // Spawn packets to all devices
+            for (let i = 0; i < this.devices.length; i++) {
+                this.packetQueue.push(policyId);
+            }
+            
+            // Animate policy core
+            const policyCore = document.querySelector('.policy-core');
+            policyCore.classList.add('policy-active');
+            setTimeout(() => {
+                policyCore.classList.remove('policy-active');
+            }, 500);
+        }
+    }
+    
+    triggerHeartbeatCheck() {
+        this.addLogEntry(
+            `HEARTBEAT`,
+            `Checking connectivity with ${this.devices.length} firewall nodes`,
+            'info'
+        );
+        
+        // Spawn heartbeat packets
+        for (let i = 0; i < this.devices.length; i++) {
+            setTimeout(() => {
+                this.packetQueue.push(null);
+            }, i * 200);
+        }
+    }
+    
+    updateMetrics() {
+        // Update latency display
+        document.getElementById('latencyMetric').innerText = `${this.metrics.latency}ms`;
+        
+        // Calculate throughput (packets per second)
+        const now = Date.now();
+        const timeDiff = (now - this.lastTimestamp) / 1000;
+        if (timeDiff > 0) {
+            const throughput = Math.round(this.metrics.packetsReceived / timeDiff);
+            document.getElementById('throughputMetric').innerText = `${throughput} p/s`;
+            this.metrics.packetsReceived = 0;
+            this.metrics.packetsSent = 0;
+            this.lastTimestamp = now;
+        }
+    }
+    
+    startMetricsUpdate() {
+        setInterval(() => this.updateMetrics(), 1000);
+    }
+    
+    updateTimestamp() {
+        const timestampEl = document.getElementById('liveTimestamp');
+        setInterval(() => {
+            timestampEl.innerHTML = `<i class="bi bi-clock"></i> ${new Date().toLocaleTimeString()}`;
+        }, 1000);
+    }
+    
+    reset() {
+        this.activePackets = [];
+        this.packetQueue = [];
+        this.metrics = {
+            packetsSent: 0,
+            packetsReceived: 0,
+            latency: 0,
+            throughput: 0
+        };
+        
+        // Reset device rule counters
+        this.devices.forEach(device => {
+            const rulesCountEl = document.getElementById(`rules-count-${device.id}`);
+            if (rulesCountEl) {
+                rulesCountEl.innerText = '0';
+            }
+        });
+        
+        this.addLogEntry(`SYSTEM`, `Simulation reset complete`, 'warning');
+        this.renderPackets();
+    }
+}
+
+// Initialize simulation when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.simulation = new FirewallSimulation();
+    
+    // Trigger initial policies if any exist
+    setTimeout(() => {
+        if (window.simulationData && window.simulationData.rules > 0) {
+            for (let i = 0; i < Math.min(3, window.simulationData.rules); i++) {
+                setTimeout(() => {
+                    window.simulation.triggerPolicyDeployment(i + 1);
+                }, i * 1000);
+            }
+        }
+    }, 2000);
+});
+</script>
+
+<style>
+/* Animation Keyframes */
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.05); }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes packetFlow {
+    0% { transform: translateX(0) translateY(0); opacity: 1; }
+    100% { transform: translateX(100px) translateY(-50px); opacity: 0; }
+}
+
+@keyframes nodeGlow {
+    0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.7); }
+    70% { box-shadow: 0 0 0 20px rgba(0, 212, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
+}
+
+/* Firewall Node Cards */
+.firewall-node-card {
+    position: absolute;
+    background: linear-gradient(135deg, rgba(16, 24, 39, 0.95), rgba(8, 12, 24, 0.95));
+    border: 1px solid rgba(0, 212, 255, 0.3);
+    border-radius: 12px;
+    padding: 12px;
+    min-width: 180px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    animation: slideIn 0.5s ease-out;
+}
+
+.firewall-node-card:hover {
+    transform: translateY(-5px);
+    border-color: #00d4ff;
+    box-shadow: 0 10px 30px rgba(0, 212, 255, 0.2);
+}
+
+.firewall-node-card.packet-received {
+    animation: nodeGlow 0.5s ease-out;
+}
+
+.firewall-node-card.highlight {
+    border-color: #ffd700;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.node-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 12px;
+    background: radial-gradient(circle at center, rgba(0, 212, 255, 0.2), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.node-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.node-status-indicator {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+}
+
+.status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.status-dot.online {
+    background-color: #00ff88;
+    box-shadow: 0 0 5px #00ff88;
+}
+
+.node-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #00d4ff, #0099ff);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+}
+
+.node-info {
+    flex: 1;
+}
+
+.node-name {
+    font-weight: bold;
+    color: #fff;
+    font-size: 14px;
+}
+
+.node-address {
+    font-size: 10px;
+    color: #888;
+    font-family: monospace;
+}
+
+.node-stats {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.stat-item {
+    text-align: center;
+    flex: 1;
+}
+
+.stat-value {
+    font-size: 12px;
+    font-weight: bold;
+    color: #00d4ff;
+}
+
+.stat-label {
+    font-size: 8px;
+    color: #666;
+    text-transform: uppercase;
+}
+
+/* Policy Core */
+.policy-zone {
+    pointer-events: none;
+}
+
+.policy-core {
+    width: 120px;
+    height: 120px;
+    background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 153, 255, 0.1));
+    border: 2px solid #00d4ff;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.policy-core.policy-active {
+    animation: nodeGlow 0.5s ease-out;
+    transform: scale(1.1);
+}
+
+.core-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, rgba(0, 212, 255, 0.3), transparent);
+    animation: pulse 2s infinite;
+}
+
+.policy-icon {
+    font-size: 40px;
+    color: #00d4ff;
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.5));
+}
+
+.policy-label {
+    font-size: 10px;
+    color: #00d4ff;
+    margin-top: 8px;
+    font-family: monospace;
+    letter-spacing: 1px;
+}
+
+/* Rule Items */
+.rule-item {
+    transition: all 0.3s ease;
+    border-left: 3px solid transparent;
+}
+
+.rule-item.allow {
+    border-left-color: #00ff88;
+}
+
+.rule-item.block {
+    border-left-color: #ff4444;
+}
+
+.rule-item.policy-updated {
+    background: rgba(0, 212, 255, 0.1);
+    transform: translateX(5px);
+}
+
+/* Log Entries */
+.simulation-log .list-group-item {
+    background: #0a0e27;
+    border-color: rgba(0, 212, 255, 0.1);
+    font-family: monospace;
+    font-size: 12px;
+    padding: 8px 12px;
+}
+
+.animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Badge Animations */
+.pulse-badge {
+    animation: pulse 2s infinite;
+}
+
+.animate-pulse {
+    animation: pulse 1s ease-in-out;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+    .firewall-node-card {
+        min-width: 150px;
+        padding: 8px;
+    }
+    
+    .node-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 16px;
+    }
+    
+    .node-name {
+        font-size: 12px;
+    }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0a0e27;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #00d4ff;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #0099ff;
+}
+</style>
+{% endblock %}

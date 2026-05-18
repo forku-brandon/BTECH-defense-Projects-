@@ -25,12 +25,14 @@ def create_app(config_class=Config):
     from app.routes.rules import rules_bp
     from app.routes.deploy import deploy_bp
     from app.routes.logs import logs_bp
+    from app.routes.simulation import simulation_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(devices_bp, url_prefix='/devices')
     app.register_blueprint(rules_bp, url_prefix='/rules')
     app.register_blueprint(deploy_bp, url_prefix='/deploy')
+    app.register_blueprint(simulation_bp, url_prefix='/simulation')
     app.register_blueprint(logs_bp, url_prefix='/logs')
 
     # Setup logging

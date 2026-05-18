@@ -13,7 +13,12 @@
     <div class="col-lg-6 mb-4">
         <div class="card shadow h-100">
             <div class="card-header d-flex justify-content-between align-items-center border-bottom border-primary">
-                <h5 class="m-0 font-monospace text-primary"><i class="bi bi-hdd-network me-2"></i> {{ device.name }}</h5>
+                <div>
+                    <h5 class="m-0 font-monospace text-primary"><i class="bi bi-hdd-network me-2"></i> {{ device.name }}</h5>
+                    {% if device.host.startswith('mock-') %}
+                    <span class="badge bg-info bg-opacity-25 text-info border border-info">SIMULATION NODE</span>
+                    {% endif %}
+                </div>
                 <form action="{{ url_for('deploy.sync_device', device_id=device.id) }}" method="POST" class="d-inline">
                     <button type="submit" class="btn btn-sm btn-outline-primary font-monospace">
                         <i class="bi bi-arrow-repeat"></i> FORCE_SYNC

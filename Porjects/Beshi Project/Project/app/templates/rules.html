@@ -29,28 +29,46 @@
                         <td>
                             <strong class="text-primary">{{ rule.name }}</strong><br>
                             <small class="text-muted" style="font-size: 0.75rem;">// {{ rule.description }}</small>
-                        </td>
+                         </td>
                         <td class="text-center align-middle">
                             {% if rule.action == 'allow' %}
                                 <span class="badge bg-success bg-opacity-25 text-success border border-success w-100">ALLOW</span>
                             {% else %}
                                 <span class="badge bg-danger bg-opacity-25 text-danger border border-danger w-100">BLOCK</span>
                             {% endif %}
-                        </td>
+                         </td>
                         <td class="align-middle text-uppercase">{{ rule.interface }}</td>
                         <td class="align-middle text-info">{{ rule.protocol|upper }}</td>
                         <td class="align-middle">{{ rule.source_ip }}<span class="text-muted">{% if rule.source_port != 'any' %}:{{ rule.source_port }}{% endif %}</span></td>
                         <td class="align-middle">{{ rule.dest_ip }}<span class="text-muted">{% if rule.dest_port != 'any' %}:{{ rule.dest_port }}{% endif %}</span></td>
-                        <td class="align-middle text-end">
-                            <form action="{{ url_for('rules.delete', id=rule.id) }}" method="POST" class="d-inline" onsubmit="return confirm('WARNING: Destroying policy from central database. Proceed?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Rule">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
+                        <td class="align-middle">
+                            <div class="d-flex flex-wrap gap-1">
+                                {% if rule.target_firewalls %}
+                                    {% for fw in rule.target_firewalls.split(',') %}
+                                        <span class="badge bg-info bg-opacity-25 text-info border border-info" style="font-size: 0.7rem;">
+                                            <i class="bi bi-shield-check"></i> {{ fw }}
+                                        </span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="badge bg-secondary bg-opacity-25 text-secondary">ALL_NODES</span>
+                                {% endif %}
+                            </div>
                         </td>
+                        <td class="align-middle text-end">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="showDeploymentStatus('{{ rule.id }}', '{{ rule.name }}')" title="Deploy to Selected Firewalls">
+                                    <i class="bi bi-cloud-upload"></i>
+                                </button>
+                                <form action="{{ url_for('rules.delete', id=rule.id) }}" method="POST" class="d-inline" onsubmit="return confirm('WARNING: Destroying policy from central database. Proceed?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete Rule">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="7" class="text-center text-muted py-5">No access control lists defined in matrix.</td></tr>
+                    <tr><td colspan="8" class="text-center text-muted py-5">No access control lists defined in matrix.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -66,7 +84,7 @@
         <h5 class="modal-title font-monospace text-primary"><i class="bi bi-shield-plus"></i> COMPILE_NEW_POLICY</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form action="{{ url_for('rules.add') }}" method="POST">
+      <form action="{{ url_for('rules.add') }}" method="POST" id="addRuleForm">
           <div class="modal-body font-monospace">
             <div class="row mb-3">
                 <div class="col-md-6">
@@ -85,6 +103,8 @@
                     <select class="form-select" name="interface" required>
                         <option value="wan">WAN</option>
                         <option value="lan">LAN</option>
+                        <option value="dmz">DMZ</option>
+                        <option value="guest">GUEST</option>
                     </select>
                 </div>
             </div>
@@ -98,6 +118,57 @@
                         <option value="udp">UDP</option>
                         <option value="icmp">ICMP</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- Deployment Target Section -->
+            <div class="mb-4">
+                <label class="form-label small text-uppercase text-muted">
+                    <i class="bi bi-hdd-network"></i> DEPLOYMENT_TARGETS
+                </label>
+                <div class="card bg-transparent border-warning">
+                    <div class="card-header border-warning py-2 text-warning">
+                        <strong>SELECT FIREWALL NODES</strong>
+                    </div>
+                    <div class="card-body py-2">
+                        <div class="mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAllFirewalls">
+                                <label class="form-check-label text-info" for="selectAllFirewalls">
+                                    <i class="bi bi-check-all"></i> DEPLOY TO ALL FIREWALLS
+                                </label>
+                            </div>
+                            <hr class="my-2">
+                        </div>
+                        <div id="firewallCheckboxes" style="max-height: 200px; overflow-y: auto;">
+                            {% if devices %}
+                                {% for device in devices %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input firewall-checkbox" type="checkbox" 
+                                           name="target_firewalls" value="{{ device.id }}" id="fw_{{ device.id }}">
+                                    <label class="form-check-label" for="fw_{{ device.id }}">
+                                        <i class="bi bi-shield-shaded text-info"></i>
+                                        <strong>{{ device.name }}</strong>
+                                        <span class="text-muted small">({{ device.host }}:{{ device.port }})</span>
+                                        {% if device.status == 'online' %}
+                                            <span class="badge bg-success bg-opacity-25 text-success ms-2">ONLINE</span>
+                                        {% else %}
+                                            <span class="badge bg-danger bg-opacity-25 text-danger ms-2">OFFLINE</span>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-muted text-center py-3">
+                                    <i class="bi bi-exclamation-triangle"></i> No firewall nodes registered
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2 small text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            Selected firewalls will receive this policy. Unselected firewalls will not be affected.
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -130,13 +201,186 @@
                 <label class="form-label small text-uppercase text-muted">Context Notes</label>
                 <input type="text" class="form-control" name="description" placeholder="// Add rationale for security audit...">
             </div>
+
+            <!-- Deployment Strategy -->
+            <div class="mb-3">
+                <label class="form-label small text-uppercase text-muted">DEPLOYMENT_STRATEGY</label>
+                <select class="form-select" name="deployment_strategy">
+                    <option value="immediate">IMMEDIATE - Deploy to all selected firewalls now</option>
+                    <option value="rolling">ROLLING - Gradual deployment with delay between nodes</option>
+                    <option value="canary">CANARY - Deploy to single node first, then others</option>
+                    <option value="scheduled">SCHEDULED - Save as draft, deploy later</option>
+                </select>
+            </div>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">ABORT</button>
-            <button type="submit" class="btn btn-primary">INJECT_POLICY</button>
+            <button type="submit" class="btn btn-primary" id="submitRuleBtn">INJECT_POLICY</button>
           </div>
       </form>
     </div>
   </div>
+</div>
+
+<!-- Deployment Status Modal -->
+<div class="modal fade" id="deploymentStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-warning">
+                <h5 class="modal-title text-warning">
+                    <i class="bi bi-cloud-upload-fill"></i> DEPLOYMENT_STATUS
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="deploymentLogs" class="font-monospace" style="max-height: 400px; overflow-y: auto;">
+                    <div class="text-center text-muted">Initializing deployment engine...</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">CLOSE</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle "Select All" checkbox
+    const selectAllCheckbox = document.getElementById('selectAllFirewalls');
+    const firewallCheckboxes = document.querySelectorAll('.firewall-checkbox');
+    
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            firewallCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        });
+    }
+    
+    // Update "Select All" state when individual checkboxes change
+    firewallCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (selectAllCheckbox) {
+                const allChecked = Array.from(firewallCheckboxes).every(cb => cb.checked);
+                const someChecked = Array.from(firewallCheckboxes).some(cb => cb.checked);
+                selectAllCheckbox.checked = allChecked;
+                selectAllCheckbox.indeterminate = someChecked && !allChecked;
+            }
+        });
+    });
+    
+    // Form validation before submit
+    const form = document.getElementById('addRuleForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const selectedFirewalls = document.querySelectorAll('.firewall-checkbox:checked');
+            if (selectedFirewalls.length === 0) {
+                e.preventDefault();
+                alert('ERROR: Please select at least one firewall node for policy deployment!');
+                return false;
+            }
+            
+            // Add confirmation for the deployment strategy
+            const strategy = document.querySelector('[name="deployment_strategy"]').value;
+            const ruleName = document.querySelector('[name="name"]').value;
+            
+            const confirmMsg = `📋 POLICY_SUMMARY:\n\n` +
+                              `Rule: ${ruleName}\n` +
+                              `Targets: ${selectedFirewalls.length} firewall(s)\n` +
+                              `Strategy: ${strategy.toUpperCase()}\n\n` +
+                              `Confirm deployment to selected nodes?`;
+            
+            return confirm(confirmMsg);
+        });
+    }
+});
+
+// Function to show deployment status
+function showDeploymentStatus(ruleId) {
+    const modal = new bootstrap.Modal(document.getElementById('deploymentStatusModal'));
+    const logsContainer = document.getElementById('deploymentLogs');
+    
+    logsContainer.innerHTML = '<div class="text-info"><i class="bi bi-arrow-repeat spinner"></i> Fetching deployment status...</div>';
+    modal.show();
+    
+    // Simulate fetching deployment status (replace with actual API call)
+    setTimeout(() => {
+        logsContainer.innerHTML = `
+            <div class="terminal-line text-success">⟩ DEPLOYMENT_ENGINE_INITIALIZED</div>
+            <div class="terminal-line text-info">⟩ TARGET_FIREWALLS: 3 nodes</div>
+            <div class="terminal-line text-warning">⟩ DEPLOYMENT_STRATEGY: Rolling update</div>
+            <hr class="my-2">
+            <div class="terminal-line">[✓] Branch-Office-A: DEPLOYMENT_SUCCESSFUL (200ms)</div>
+            <div class="terminal-line">[✓] Branch-Office-B: DEPLOYMENT_SUCCESSFUL (350ms)</div>
+            <div class="terminal-line">[✓] HQ-Firewall: DEPLOYMENT_SUCCESSFUL (280ms)</div>
+            <hr class="my-2">
+            <div class="terminal-line text-success">⟩ DEPLOYMENT_COMPLETE: 3/3 nodes synced</div>
+            <div class="terminal-line text-muted">⟩ POLICY_TRACKER: Rule #${ruleId} applied to all targets</div>
+        `;
+    }, 1500);
+}
+
+// Add visual feedback for selected firewalls count
+function updateSelectedCount() {
+    const selectedCount = document.querySelectorAll('.firewall-checkbox:checked').length;
+    const submitBtn = document.getElementById('submitRuleBtn');
+    if (submitBtn && selectedCount > 0) {
+        submitBtn.innerHTML = `DEPLOY_TO_${selectedCount}_NODE${selectedCount > 1 ? 'S' : ''}`;
+    } else if (submitBtn) {
+        submitBtn.innerHTML = 'INJECT_POLICY';
+    }
+}
+
+// Add real-time counter
+document.addEventListener('change', function(e) {
+    if (e.target.classList && e.target.classList.contains('firewall-checkbox')) {
+        updateSelectedCount();
+    }
+});
+
+// Styling for terminal-like logs
+const style = document.createElement('style');
+style.textContent = `
+    .terminal-line {
+        font-family: monospace;
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+    }
+    
+    .spinner {
+        animation: spin 1s linear infinite;
+        display: inline-block;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .firewall-checkbox:checked + label {
+        color: #00d4ff;
+        text-shadow: 0 0 5px rgba(0, 212, 255, 0.3);
+    }
+    
+    .btn-group .btn {
+        margin: 0 2px;
+    }
+`;
+document.head.appendChild(style);
+</script>
+
+<!-- Optional: Add deployment tracking to existing rules -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1100;">
+    <div id="deploymentToast" class="toast bg-dark border-success" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+        <div class="toast-header bg-dark text-success border-bottom border-success">
+            <i class="bi bi-cloud-check-fill me-2"></i>
+            <strong class="me-auto">DEPLOYMENT_ENGINE</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body font-monospace small">
+            Policy deployment initiated...
+        </div>
+    </div>
 </div>
 {% endblock %}

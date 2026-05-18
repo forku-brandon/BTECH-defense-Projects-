@@ -39,7 +39,7 @@ def add():
     db.session.commit()
     log_action('RULE_CREATED', {'rule_id': new_rule.id, 'name': new_rule.name})
     flash('Rule created successfully.', 'success')
-    return redirect(url_for('rules.index'))
+    return redirect(url_for('simulation.index', event='rule_added', item=new_rule.name))
 
 @rules_bp.route('/<int:id>/delete', methods=['POST'])
 @login_required

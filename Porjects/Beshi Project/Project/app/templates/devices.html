@@ -28,19 +28,23 @@
                         <td>{{ device.host }}</td>
                         <td class="text-muted">{{ device.port }}</td>
                         <td>
-                            {% if device.is_active %}
+                            {% if device.host.startswith('mock-') %}
+                                <span class="badge bg-info bg-opacity-25 text-info border border-info">SIMULATION</span>
+                            {% elif device.is_active %}
                                 <span class="badge bg-success bg-opacity-25 text-success border border-success">ONLINE</span>
                             {% else %}
                                 <span class="badge bg-secondary bg-opacity-25 text-secondary border border-secondary">OFFLINE</span>
                             {% endif %}
                         </td>
                         <td class="text-end">
-                            <a href="{{ url_for('devices.test_connection', id=device.id) }}" class="btn btn-sm btn-outline-info" title="Ping API">
+                            <a href="{{ url_for('devices.test_connection', id=device.id) }}" class="btn btn-sm btn-outline-info" title="Ping API" aria-label="Ping API">
                                 <i class="bi bi-broadcast"></i>
+                                <span class="visually-hidden">Ping API</span>
                             </a>
                             <form action="{{ url_for('devices.delete', id=device.id) }}" method="POST" class="d-inline" onsubmit="return confirm('WARNING: Terminating this node connection. Proceed?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove Node">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove Node" aria-label="Remove Node">
                                     <i class="bi bi-trash"></i>
+                                    <span class="visually-hidden">Remove Node</span>
                                 </button>
                             </form>
                         </td>
@@ -70,12 +74,17 @@
             </div>
             <div class="mb-3">
                 <label for="host" class="form-label small text-uppercase">IPv4 / Hostname</label>
-                <input type="text" class="form-control" id="host" name="host" required placeholder="192.168.1.1">
-                <div class="form-text text-muted">Use "mock_test" to bypass physical connection.</div>
+                <input type="text" class="form-control" id="host" name="host" placeholder="192.168.1.1 or mock-node">
+                <div class="form-text text-muted">Leave blank to create a simulation node, or enter a real firewall address for live deployments.</div>
+            </div>
+            <div class="mb-3 form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="simulation" name="simulation" checked>
+                <label class="form-check-label small text-uppercase" for="simulation">Simulation Node</label>
+                <div class="form-text text-muted">Enabled by default for simulation-first workflows. Uncheck for actual firewall device registration.</div>
             </div>
             <div class="mb-3">
                 <label for="port" class="form-label small text-uppercase">Management Port</label>
-                <input type="number" class="form-control" id="port" name="port" value="443" required>
+                <input type="number" class="form-control" id="port" name="port" value="443">
             </div>
             <div class="mb-3">
                 <label for="api_key" class="form-label small text-uppercase">API Auth Token</label>
